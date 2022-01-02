@@ -1,4 +1,4 @@
-package com.dji.djisdkdemo
+package com.dji.djisdkdemo.activity
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -7,8 +7,10 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.TextView
 import androidx.core.app.ActivityCompat
+import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.interfaces.MainActivityCallback
 import com.dji.djisdkdemo.presenter.MainActivityPresenter
+import dji.ux.widget.FPVWidget
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -20,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mHandler: Handler
     private lateinit var mTxtStatusMessage: TextView
     private lateinit var mTxtProduct: TextView
+    private lateinit var mFpvWidget: FPVWidget
 
     private val mCallback = object: MainActivityCallback {
         override fun setStatusMessage(message: String) {
@@ -62,8 +65,12 @@ class MainActivity : AppCompatActivity() {
         // Initialize UI
         mTxtStatusMessage = findViewById(R.id.txtStatusMessage)
         mTxtProduct = findViewById(R.id.txtProduct)
+        mFpvWidget = findViewById(R.id.fpvWidget)
+        mFpvWidget.apply {
+            setSourceCameraSideVisibility(false)
+        }
 
-        mPresenter.setCallback(mCallback)
+        // Check Require Permissions
         mPresenter.checkAndRequestPermissions(baseContext)
 
         // Initialize DJI SDK Manager
