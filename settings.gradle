@@ -1,0 +1,2 @@
+rootProject.name = "Dji-sdk-sample"
+include ':app'
