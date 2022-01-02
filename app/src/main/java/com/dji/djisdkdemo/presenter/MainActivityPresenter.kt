@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.dji.djisdkdemo.MainActivity
+import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.djisdkdemo.interfaces.MainActivityCallback
 import dji.common.error.DJIError
 import dji.common.error.DJISDKError
@@ -18,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MainActivityPresenter(callback: MainActivityCallback) {
+class MainActivityPresenter(private val activityCallback: MainActivityCallback) {
     companion object {
         const val TAG = "MainActivityPresenter"
         var mDjiSdkManager: DJISDKManager? = null
@@ -39,15 +39,10 @@ class MainActivityPresenter(callback: MainActivityCallback) {
         )
     }
 
-    private lateinit var mCallback: MainActivityCallback
     private var missingPermission = mutableListOf<String>()
     private var isRegistrationInProgress = AtomicBoolean(false)
 
     private val scope = CoroutineScope(Dispatchers.Default)
-
-    fun setCallback(callback: MainActivityCallback) {
-        mCallback = callback
-    }
 
     fun checkAndRequestPermissions(context: Context) {
         // Check for permissions
@@ -61,8 +56,8 @@ class MainActivityPresenter(callback: MainActivityCallback) {
         if (missingPermission.isEmpty()) {
             startSDKRegistration(context)
         } else {
-            mCallback.setStatusMessage("Need to grant the permissions!")
-            mCallback.requestPermissions(missingPermission)
+            activityCallback.setStatusMessage("Need to grant the permissions!")
+            activityCallback.requestPermissions(missingPermission)
         }
     }
 
@@ -84,7 +79,7 @@ class MainActivityPresenter(callback: MainActivityCallback) {
         if (missingPermission.isEmpty()) {
             startSDKRegistration(context)
         } else {
-            mCallback.setStatusMessage("Missing permissions!!!")
+            activityCallback.setStatusMessage("Missing permissions!!!")
         }
     }
 
@@ -96,15 +91,15 @@ class MainActivityPresenter(callback: MainActivityCallback) {
 
     private fun registerApp(context: Context) {
         scope.launch(Dispatchers.Default) {
-            mCallback.setStatusMessage("registering, pls wait...")
+            activityCallback.setStatusMessage("registering, pls wait...")
 
             val callback = object : DJISDKManager.SDKManagerCallback {
                 override fun onRegister(djiError: DJIError?) {
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
-                        mCallback.setStatusMessage("Register Success")
+                        activityCallback.setStatusMessage("Register Success")
                         DJISDKManager.getInstance().startConnectionToProduct()
                     } else {
-                        mCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
+                        activityCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
                     }
                     djiError?.let {
                         Log.v(TAG, it.description)
@@ -112,21 +107,21 @@ class MainActivityPresenter(callback: MainActivityCallback) {
                 }
                 override fun onProductDisconnect() {
                     Log.d(TAG, "onProductDisconnect")
-                    mCallback.setStatusMessage("Product Disconnected")
+                    activityCallback.setStatusMessage("Product Disconnected")
                     setProduct()
-                    mCallback.notifyStatusChange()
+                    activityCallback.notifyStatusChange()
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
                     val product = mDjiSdkManager?.product
-                    mCallback.setStatusMessage("Product connected. product=$product")
+                    activityCallback.setStatusMessage("Product connected. product=$product")
                     setProduct()
-                    mCallback.notifyStatusChange()
+                    activityCallback.notifyStatusChange()
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductChanged")
-                    mCallback.setStatusMessage("Product changed newProduct:$baseProduct")
+                    activityCallback.setStatusMessage("Product changed newProduct:$baseProduct")
                     setProduct()
                 }
 
@@ -138,9 +133,9 @@ class MainActivityPresenter(callback: MainActivityCallback) {
                     newComponent?.let {
                         it.setComponentListener {
                             Log.d(TAG, "onComponentConnectivityChanged: $it")
-                            mCallback.setStatusMessage("onComponentConnectivityChanged $it")
+                            activityCallback.setStatusMessage("onComponentConnectivityChanged $it")
                             setProduct()
-                            mCallback.notifyStatusChange()
+                            activityCallback.notifyStatusChange()
                         }
                     }
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
@@ -151,12 +146,12 @@ class MainActivityPresenter(callback: MainActivityCallback) {
 
             mDjiSdkManager = DJISDKManager.getInstance()
             mDjiSdkManager?.registerApp(context, callback) ?: run {
-                mCallback.setStatusMessage("mDjiSdkManager is null!!")
+                activityCallback.setStatusMessage("mDjiSdkManager is null!!")
             }
         }
     }
 
     private fun setProduct() {
-        mCallback.setProduct(mDjiSdkManager?.product?.model?.displayName ?: "(none)")
+        activityCallback.setProduct(mDjiSdkManager?.product?.model?.displayName ?: "(none)")
     }
 }
