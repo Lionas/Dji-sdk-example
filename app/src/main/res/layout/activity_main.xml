@@ -9,7 +9,7 @@
 
     <!-- Widget to see first person view (FPV) -->
     <dji.ux.widget.FPVWidget
-        android:id="@+id/fpvWidget"
+        android:id="@+id/fpv_widget"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -103,7 +103,7 @@
         app:layout_constraintTop_toBottomOf="@+id/signal" />
 
     <TextView
-        android:id="@+id/txtProduct"
+        android:id="@+id/txt_product"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/dp_100_in_sw320dp"
@@ -114,7 +114,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/txtStatusMessage"
+        android:id="@+id/txt_status_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/dp_35_in_sw320dp"
@@ -122,6 +122,6 @@
         tools:text="(status)"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txtProduct" />
+        app:layout_constraintTop_toBottomOf="@id/txt_product" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

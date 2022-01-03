@@ -63,9 +63,9 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Initialize UI
-        txtStatusMessage = findViewById(R.id.txtStatusMessage)
-        txtProduct = findViewById(R.id.txtProduct)
-        fpvWidget = findViewById(R.id.fpvWidget)
+        txtStatusMessage = findViewById(R.id.txt_status_message)
+        txtProduct = findViewById(R.id.txt_product)
+        fpvWidget = findViewById(R.id.fpv_widget)
         fpvWidget.apply {
             setSourceCameraSideVisibility(false)
         }
