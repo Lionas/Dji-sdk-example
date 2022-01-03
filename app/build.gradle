@@ -120,6 +120,8 @@ dependencies {
         exclude module: 'dji-sdk'
         //exclude module: 'fly-safe-database'
     })
+    // Pre-flight checklistで使用する
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1'
 }
