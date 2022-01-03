@@ -15,7 +15,6 @@ import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.mapkit.core.maps.DJIMap
 import com.dji.mapkit.core.models.DJILatLng
 import dji.common.airlink.PhysicalSource
-import dji.common.logics.warningstatuslogic.WarningStatusItem
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
 import dji.thirdparty.io.reactivex.disposables.CompositeDisposable
