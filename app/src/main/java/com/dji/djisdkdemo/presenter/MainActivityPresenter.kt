@@ -17,11 +17,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
+import dji.common.useraccount.UserAccountState
+
+import dji.common.util.CommonCallbacks.CompletionCallbackWith
+
+import dji.sdk.useraccount.UserAccountManager
 
 class MainActivityPresenter(private val activityCallback: MainActivityCallback) {
     companion object {
         const val TAG = "MainActivityPresenter"
-        var mDjiSdkManager: DJISDKManager? = null
         val REQUIRED_PERMISSION_LIST = arrayOf(
             Manifest.permission.VIBRATE,
             Manifest.permission.INTERNET,
@@ -39,6 +43,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
         )
     }
 
+    private var djiSdkManager: DJISDKManager? = null
     private var missingPermission = mutableListOf<String>()
     private var isRegistrationInProgress = AtomicBoolean(false)
 
@@ -98,6 +103,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
                         activityCallback.setStatusMessage("Register Success")
                         DJISDKManager.getInstance().startConnectionToProduct()
+                        loginAccount(context)
                     } else {
                         activityCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
                     }
@@ -113,7 +119,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
-                    val product = mDjiSdkManager?.product
+                    val product = djiSdkManager?.product
                     activityCallback.setStatusMessage("Product connected. product=$product")
                     setProduct()
                     activityCallback.notifyStatusChange()
@@ -144,14 +150,29 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                 override fun onDatabaseDownloadProgress(p0: Long, p1: Long) = Unit
             }
 
-            mDjiSdkManager = DJISDKManager.getInstance()
-            mDjiSdkManager?.registerApp(context, callback) ?: run {
+            djiSdkManager = DJISDKManager.getInstance()
+            djiSdkManager?.registerApp(context, callback) ?: run {
                 activityCallback.setStatusMessage("mDjiSdkManager is null!!")
             }
         }
     }
 
+    private fun loginAccount(context: Context) {
+        UserAccountManager.getInstance().logIntoDJIUserAccount(
+            context,
+            object : CompletionCallbackWith<UserAccountState?> {
+                override fun onSuccess(userAccountState: UserAccountState?) {
+                    Log.d(TAG, "Login Success")
+                }
+
+                override fun onFailure(error: DJIError) {
+                    Log.e(TAG, "Login Error:" + error.description)
+                }
+            }
+        )
+    }
+
     private fun setProduct() {
-        activityCallback.setProduct(mDjiSdkManager?.product?.model?.displayName ?: "(none)")
+        activityCallback.setProduct(djiSdkManager?.product?.model?.displayName ?: "(none)")
     }
 }

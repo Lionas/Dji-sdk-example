@@ -19,15 +19,15 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_PERMISSION_CODE = 12345
     }
 
-    private lateinit var mHandler: Handler
-    private lateinit var mTxtStatusMessage: TextView
-    private lateinit var mTxtProduct: TextView
-    private lateinit var mFpvWidget: FPVWidget
+    private lateinit var handler: Handler
+    private lateinit var txtStatusMessage: TextView
+    private lateinit var txtProduct: TextView
+    private lateinit var fpvWidget: FPVWidget
 
     private val mCallback = object: MainActivityCallback {
         override fun setStatusMessage(message: String) {
-            mHandler.post {
-                mTxtStatusMessage.text = message
+            handler.post {
+                txtStatusMessage.text = message
             }
         }
 
@@ -40,14 +40,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun setProduct(name: String) {
-            mHandler.post {
-                mTxtProduct.text = name
+            handler.post {
+                txtProduct.text = name
             }
         }
 
         override fun notifyStatusChange() {
-            mHandler.removeCallbacks(updateRunnable)
-            mHandler.postDelayed(updateRunnable, 500)
+            handler.removeCallbacks(updateRunnable)
+            handler.postDelayed(updateRunnable, 500)
         }
     }
 
@@ -63,10 +63,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // Initialize UI
-        mTxtStatusMessage = findViewById(R.id.txtStatusMessage)
-        mTxtProduct = findViewById(R.id.txtProduct)
-        mFpvWidget = findViewById(R.id.fpvWidget)
-        mFpvWidget.apply {
+        txtStatusMessage = findViewById(R.id.txtStatusMessage)
+        txtProduct = findViewById(R.id.txtProduct)
+        fpvWidget = findViewById(R.id.fpvWidget)
+        fpvWidget.apply {
             setSourceCameraSideVisibility(false)
         }
 
@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         mPresenter.checkAndRequestPermissions(baseContext)
 
         // Initialize DJI SDK Manager
-        mHandler = Handler(Looper.getMainLooper())
+        handler = Handler(Looper.getMainLooper())
     }
 
     /**
