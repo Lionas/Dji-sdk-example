@@ -47,6 +47,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
     private var missingPermission = mutableListOf<String>()
     private var isRegistrationInProgress = AtomicBoolean(false)
 
+    private var lastProgress = -1
     private val scope = CoroutineScope(Dispatchers.Default)
 
     fun checkAndRequestPermissions(context: Context) {
@@ -85,6 +86,13 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
             startSDKRegistration(context)
         } else {
             activityCallback.setStatusMessage("Missing permissions!!!")
+        }
+    }
+
+    fun dispose() {
+        // Prevent memory leak by releasing DJISDKManager's references to this activity
+        if (djiSdkManager != null) {
+            djiSdkManager?.destroy()
         }
     }
 
@@ -146,8 +154,20 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                     }
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
                 }
-                override fun onInitProcess(p0: DJISDKInitEvent?, p1: Int) = Unit
-                override fun onDatabaseDownloadProgress(p0: Long, p1: Long) = Unit
+
+                override fun onInitProcess(djisdkInitEvent: DJISDKInitEvent, totalProcess: Int) {
+                    Log.d(TAG, djisdkInitEvent.initializationState.toString())
+                }
+
+                override fun onDatabaseDownloadProgress(current: Long, total: Long) {
+                    val progress = (100 * current / total).toInt()
+                    if (progress != lastProgress) {
+                        lastProgress = progress
+                        val message = "Fly safe database download progress: $progress"
+                        Log.d(TAG, message)
+                        activityCallback.setStatusMessage(message)
+                    }
+                }
             }
 
             djiSdkManager = DJISDKManager.getInstance()
