@@ -10,8 +10,10 @@ import androidx.core.app.ActivityCompat
 import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.interfaces.MainActivityCallback
 import com.dji.djisdkdemo.presenter.MainActivityPresenter
+import dagger.hilt.android.AndroidEntryPoint
 import dji.ux.widget.FPVWidget
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     companion object {
         const val TAG = "MainActivity"
