@@ -15,6 +15,7 @@ import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.mapkit.core.maps.DJIMap
 import com.dji.mapkit.core.models.DJILatLng
 import dji.common.airlink.PhysicalSource
+import dji.common.logics.warningstatuslogic.WarningStatusItem
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
 import dji.thirdparty.io.reactivex.disposables.CompositeDisposable
@@ -44,8 +45,9 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
     private var deviceWidth = 0
     private var deviceHeight = 0
     private var compositeDisposable: CompositeDisposable? = null
-    private var userAccountLoginWidget: UserAccountLoginWidget? = null
 
+    private var userAccountLoginWidget: UserAccountLoginWidget? = null
+    private lateinit var topBarPanelWidget: TopBarPanelWidget
     private var parentView: ConstraintLayout? = null
     private var radarWidget: RadarWidget? = null
     private var fpvWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
@@ -125,20 +127,20 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
         }
 
         // Setup top bar state callbacks
-        val topBarPanel = activity.findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
-        val systemStatusWidget = topBarPanel.systemStatusWidget
+        topBarPanelWidget = activity.findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
+        val systemStatusWidget = topBarPanelWidget.systemStatusWidget
         if (systemStatusWidget != null) {
             systemStatusWidget.stateChangeCallback =
                 activity.findViewById(R.id.widget_panel_system_status_list)
         }
 
-        val simulatorIndicatorWidget = topBarPanel.simulatorIndicatorWidget
+        val simulatorIndicatorWidget = topBarPanelWidget.simulatorIndicatorWidget
         if (simulatorIndicatorWidget != null) {
             simulatorIndicatorWidget.stateChangeCallback =
                 activity.findViewById(R.id.widget_simulator_control)
         }
 
-        val gpsSignalWidget = topBarPanel.gpsSignalWidget
+        val gpsSignalWidget = topBarPanelWidget.gpsSignalWidget
         if (gpsSignalWidget != null) {
             gpsSignalWidget.stateChangeCallback =
                 activity.findViewById(R.id.widget_rtk)
@@ -152,6 +154,18 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
             params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
             it.layoutParams = params
         }
+
+        // 各種UIカスタム
+        customTopBarPanel()
+    }
+
+    private fun customTopBarPanel() {
+        val topBarPanelCustom = TopBarPanelCustom(topBarPanelWidget)
+        val colorInt = activity.getColor(R.color.gray)
+        topBarPanelCustom.setSystemStatusMessageTextColor(colorInt)
+
+        val drawable = activity.getDrawable(R.drawable.fpv_gradient_left)
+        topBarPanelCustom.setSystemStatusBackgroundDrawable(drawable)
     }
 
     fun onResume() {
