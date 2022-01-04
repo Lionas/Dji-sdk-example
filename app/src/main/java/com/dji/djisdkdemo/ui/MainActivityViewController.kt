@@ -10,6 +10,7 @@ import android.view.animation.Transformation
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.mapkit.core.maps.DJIMap
@@ -30,7 +31,7 @@ import dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
 import dji.ux.beta.map.widget.map.MapWidget
 import dji.ux.beta.training.widget.simulatorcontrol.SimulatorControlWidget
 
-class MainActivityViewController(private val activity: AppCompatActivity) {
+class MainActivityViewController(private val activity: AppCompatActivity) : LifecycleEventObserver {
 
     // for custom UI
     private lateinit var txtStatusMessage: TextView
@@ -59,7 +60,7 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    fun initUI() {
+    private fun initCustomUI() {
         // Initialize UI
         txtStatusMessage = activity.findViewById(R.id.txt_status_message)
         txtProduct = activity.findViewById(R.id.txt_product)
@@ -167,7 +168,11 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
         topBarPanelCustom.setSystemStatusBackgroundDrawable(drawable)
     }
 
-    fun onResume() {
+    private fun onCreateProcess() {
+        initCustomUI()
+    }
+
+    private fun onResumeProcess() {
         mapWidget?.onResume()
         compositeDisposable = CompositeDisposable()
         secondaryFPVWidget?.let {
@@ -226,7 +231,7 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
         mapWidget?.onLowMemory()
     }
 
-    fun onPause() {
+    private fun onPauseProcess() {
         compositeDisposable?.let {
             it.dispose()
             compositeDisposable = null
@@ -384,6 +389,25 @@ class MainActivityViewController(private val activity: AppCompatActivity) {
 
         init {
             duration = DURATION.toLong()
+        }
+    }
+
+    // ライフサイクルに連動する処理
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        when (event) {
+            Lifecycle.Event.ON_CREATE -> {
+                onCreateProcess()
+            }
+            Lifecycle.Event.ON_RESUME -> {
+                onResumeProcess()
+            }
+            Lifecycle.Event.ON_PAUSE -> {
+                onPauseProcess()
+            }
+            Lifecycle.Event.ON_START -> Unit
+            Lifecycle.Event.ON_STOP -> Unit
+            Lifecycle.Event.ON_DESTROY -> Unit
+            Lifecycle.Event.ON_ANY -> Unit
         }
     }
 }

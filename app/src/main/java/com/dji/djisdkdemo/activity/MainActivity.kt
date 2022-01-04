@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     // call from presenter
     private val callback = object: MainActivityCallback {
         override fun setStatusMessage(message: String) {
-            uiPresenter.setTextViewStatusMessage(message)
+            uiController.setTextViewStatusMessage(message)
         }
 
         override fun requestPermissions(missingPermission: MutableList<String>) {
@@ -44,16 +44,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun setProduct(name: String) {
-            uiPresenter.setTextViewProduct(name)
+            uiController.setTextViewProduct(name)
         }
 
         override fun notifyStatusChange() {
-            uiPresenter.notifyStatusChange()
+            uiController.notifyStatusChange()
         }
     }
 
     private val presenter = MainActivityPresenter(callback)
-    private lateinit var uiPresenter: MainActivityViewController
+    private val uiController: MainActivityViewController = MainActivityViewController(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,9 +61,8 @@ class MainActivity : AppCompatActivity() {
         isAppStarted = true
 
         // Initialize UI
-        uiPresenter = MainActivityViewController(this)
-        uiPresenter.initUI()
-        uiPresenter.initUxSdkUI(savedInstanceState)
+        lifecycle.addObserver(uiController)
+        uiController.initUxSdkUI(savedInstanceState)
 
         // Check Require Permissions
         presenter.checkAndRequestPermissions(baseContext)
@@ -71,22 +70,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
         super.onSaveInstanceState(outState, outPersistentState)
-        uiPresenter.onSaveInstanceState(outState)
+        uiController.onSaveInstanceState(outState)
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        uiPresenter.onLowMemory()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        uiPresenter.onResume()
-    }
-
-    override fun onPause() {
-        uiPresenter.onPause()
-        super.onPause()
+        uiController.onLowMemory()
     }
 
     override fun onDestroy() {
