@@ -202,7 +202,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="@string/uxsdk_widget_camera_controls_ratio"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.45"
+        app:layout_constraintHeight_percent="0.4"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.45" />
 
@@ -211,8 +211,8 @@
         android:layout_width="@dimen/mini_map_width"
         android:layout_height="@dimen/mini_map_height"
         android:layout_marginEnd="12dp"
-        android:layout_marginBottom="12dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="2dp"
+        app:layout_constraintBottom_toTopOf="@+id/txt_product"
         app:layout_constraintEnd_toEndOf="parent"
         app:uxsdk_djiMap_mapType="normal" />
 
@@ -247,7 +247,7 @@
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/txt_product"
         app:layout_constraintHeight_percent="0.25"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -257,7 +257,7 @@
         android:layout_height="0dp"
         android:layout_marginStart="8dp"
         android:layout_marginBottom="5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/txt_product"
         app:layout_constraintHeight_percent="0.25"
         app:layout_constraintLeft_toRightOf="@+id/widget_compass" />
 
@@ -331,24 +331,27 @@
 
     <TextView
         android:id="@+id/txt_product"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/dp_100_in_sw320dp"
-        android:textSize="@dimen/dp_35_in_sw320dp"
-        tools:text="(product)"
+        android:background="@color/black"
+        android:textColor="@color/white"
+        android:paddingStart="@dimen/txt_product_name_margin"
+        app:layout_constraintWidth_percent="0.5"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:text="@string/txt_product_default"
+        tools:ignore="RtlSymmetry" />
 
     <TextView
         android:id="@+id/txt_status_message"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/dp_35_in_sw320dp"
-        android:textSize="@dimen/dp_20_in_sw320dp"
-        tools:text="(status)"
-        app:layout_constraintLeft_toLeftOf="parent"
+        android:background="@color/black"
+        android:textColor="@color/white"
+        app:layout_constraintWidth_percent="0.5"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/txt_product" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="(status)"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
