@@ -30,8 +30,10 @@ import dji.ux.beta.core.widget.radar.RadarWidget
 import dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
 import dji.ux.beta.map.widget.map.MapWidget
 import dji.ux.beta.training.widget.simulatorcontrol.SimulatorControlWidget
+import java.lang.ref.WeakReference
 
-class MainActivityViewController(private val activity: AppCompatActivity) : LifecycleEventObserver {
+class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
+    private val weakActivityReference = WeakReference(appCompatActivity)
 
     // for custom UI
     private lateinit var txtStatusMessage: TextView
@@ -61,9 +63,10 @@ class MainActivityViewController(private val activity: AppCompatActivity) : Life
     private val handler = Handler(Looper.getMainLooper())
 
     private fun initCustomUI() {
-        // Initialize UI
-        txtStatusMessage = activity.findViewById(R.id.txt_status_message)
-        txtProduct = activity.findViewById(R.id.txt_product)
+        weakActivityReference.get()?.let { activity ->
+            txtStatusMessage = activity.findViewById(R.id.txt_status_message)
+            txtProduct = activity.findViewById(R.id.txt_product)
+        }
     }
 
     fun setTextViewStatusMessage(message: String) {
@@ -85,74 +88,76 @@ class MainActivityViewController(private val activity: AppCompatActivity) : Life
 
     private val updateRunnable = Runnable {
         val intent = Intent(MainActivity.FLAG_CONNECTION_CHANGE)
-        activity.sendBroadcast(intent)
+        weakActivityReference.get()?.sendBroadcast(intent)
     }
 
     fun initUxSdkUI(savedInstanceState: Bundle?) {
-        radarWidget = activity.findViewById(R.id.widget_radar)
-        fpvWidget = activity.findViewById(R.id.widget_fpv)
-        fpvWidget?.setOnClickListener {
-            onViewClick(fpvWidget)
-        }
-        fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
-        mapWidget = activity.findViewById(R.id.widget_map)
-        secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
-        secondaryFPVWidget?.setOnClickListener {
-            swapVideoSource()
-        }
-        systemStatusListPanelWidget = activity.findViewById(R.id.widget_panel_system_status_list)
-        rtkWidget = activity.findViewById(R.id.widget_rtk)
-        simulatorControlWidget = activity.findViewById(R.id.widget_simulator_control)
-
-        parentView = activity.findViewById(R.id.root_view)
-
-        widgetHeight = activity.resources.getDimension(R.dimen.mini_map_height).toInt()
-        widgetWidth = activity.resources.getDimension(R.dimen.mini_map_width).toInt()
-        widgetMargin = activity.resources.getDimension(R.dimen.mini_map_margin).toInt()
-
-        val displayMetrics = activity.resources.displayMetrics
-        deviceHeight = displayMetrics.heightPixels
-        deviceWidth = displayMetrics.widthPixels
-
-        setM200SeriesWarningLevelRanges()
-        mapWidget?.let {
-            it.initAMap { map: DJIMap ->
-                map.setOnMapClickListener { latLng: DJILatLng? ->
-                    onViewClick(it)
-                }
-                map.uiSettings.setZoomControlsEnabled(false)
+        weakActivityReference.get()?.let { activity ->
+            radarWidget = activity.findViewById(R.id.widget_radar)
+            fpvWidget = activity.findViewById(R.id.widget_fpv)
+            fpvWidget?.setOnClickListener {
+                onViewClick(fpvWidget)
             }
-            it.userAccountLoginWidget.visibility = View.GONE
-            it.onCreate(savedInstanceState)
-        }
+            fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
+            mapWidget = activity.findViewById(R.id.widget_map)
+            secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
+            secondaryFPVWidget?.setOnClickListener {
+                swapVideoSource()
+            }
+            systemStatusListPanelWidget = activity.findViewById(R.id.widget_panel_system_status_list)
+            rtkWidget = activity.findViewById(R.id.widget_rtk)
+            simulatorControlWidget = activity.findViewById(R.id.widget_simulator_control)
 
-        // Setup top bar state callbacks
-        topBarPanelWidget = activity.findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
-        val systemStatusWidget = topBarPanelWidget.systemStatusWidget
-        if (systemStatusWidget != null) {
-            systemStatusWidget.stateChangeCallback =
-                activity.findViewById(R.id.widget_panel_system_status_list)
-        }
+            parentView = activity.findViewById(R.id.root_view)
 
-        val simulatorIndicatorWidget = topBarPanelWidget.simulatorIndicatorWidget
-        if (simulatorIndicatorWidget != null) {
-            simulatorIndicatorWidget.stateChangeCallback =
-                activity.findViewById(R.id.widget_simulator_control)
-        }
+            widgetHeight = activity.resources.getDimension(R.dimen.mini_map_height).toInt()
+            widgetWidth = activity.resources.getDimension(R.dimen.mini_map_width).toInt()
+            widgetMargin = activity.resources.getDimension(R.dimen.mini_map_margin).toInt()
 
-        val gpsSignalWidget = topBarPanelWidget.gpsSignalWidget
-        if (gpsSignalWidget != null) {
-            gpsSignalWidget.stateChangeCallback =
-                activity.findViewById(R.id.widget_rtk)
-        }
+            val displayMetrics = activity.resources.displayMetrics
+            deviceHeight = displayMetrics.heightPixels
+            deviceWidth = displayMetrics.widthPixels
 
-        mapWidget?.let {
-            userAccountLoginWidget = it.userAccountLoginWidget
-        }
-        userAccountLoginWidget?.let {
-            val params = it.layoutParams as ConstraintLayout.LayoutParams
-            params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
-            it.layoutParams = params
+            setM200SeriesWarningLevelRanges()
+            mapWidget?.let {
+                it.initAMap { map: DJIMap ->
+                    map.setOnMapClickListener { latLng: DJILatLng? ->
+                        onViewClick(it)
+                    }
+                    map.uiSettings.setZoomControlsEnabled(false)
+                }
+                it.userAccountLoginWidget.visibility = View.GONE
+                it.onCreate(savedInstanceState)
+            }
+
+            // Setup top bar state callbacks
+            topBarPanelWidget = activity.findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
+            val systemStatusWidget = topBarPanelWidget.systemStatusWidget
+            if (systemStatusWidget != null) {
+                systemStatusWidget.stateChangeCallback =
+                    activity.findViewById(R.id.widget_panel_system_status_list)
+            }
+
+            val simulatorIndicatorWidget = topBarPanelWidget.simulatorIndicatorWidget
+            if (simulatorIndicatorWidget != null) {
+                simulatorIndicatorWidget.stateChangeCallback =
+                    activity.findViewById(R.id.widget_simulator_control)
+            }
+
+            val gpsSignalWidget = topBarPanelWidget.gpsSignalWidget
+            if (gpsSignalWidget != null) {
+                gpsSignalWidget.stateChangeCallback =
+                    activity.findViewById(R.id.widget_rtk)
+            }
+
+            mapWidget?.let {
+                userAccountLoginWidget = it.userAccountLoginWidget
+            }
+            userAccountLoginWidget?.let {
+                val params = it.layoutParams as ConstraintLayout.LayoutParams
+                params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
+                it.layoutParams = params
+            }
         }
     }
 

@@ -53,7 +53,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val presenter = MainActivityPresenter(callback)
-    private val uiController: MainActivityViewController = MainActivityViewController(this)
+    private val uiController: MainActivityViewController =
+        MainActivityViewController(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
