@@ -131,7 +131,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             }
 
             // Setup top bar state callbacks
-            topBarPanelWidget = activity.findViewById<TopBarPanelWidget>(R.id.panel_top_bar)
+            topBarPanelWidget = activity.findViewById(R.id.panel_top_bar)
             val systemStatusWidget = topBarPanelWidget.systemStatusWidget
             if (systemStatusWidget != null) {
                 systemStatusWidget.stateChangeCallback =
