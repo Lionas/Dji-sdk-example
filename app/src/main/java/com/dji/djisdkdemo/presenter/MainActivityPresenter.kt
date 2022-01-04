@@ -127,15 +127,14 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
-                    val product = djiSdkManager?.product
-                    activityCallback.setStatusMessage("Product connected. product=$product")
+                    activityCallback.setStatusMessage("Product connected")
                     setProduct()
                     activityCallback.notifyStatusChange()
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductChanged")
-                    activityCallback.setStatusMessage("Product changed newProduct:$baseProduct")
+                    activityCallback.setStatusMessage("Product changed")
                     setProduct()
                 }
 
@@ -146,12 +145,12 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                 ) {
                     newComponent?.let {
                         it.setComponentListener {
-                            Log.d(TAG, "onComponentConnectivityChanged: $it")
-                            activityCallback.setStatusMessage("onComponentConnectivityChanged $it")
-                            setProduct()
-                            activityCallback.notifyStatusChange()
+                            Log.d(TAG, "onComponentChange: $it")
                         }
                     }
+                    activityCallback.setStatusMessage("onComponentChanged")
+                    setProduct()
+                    activityCallback.notifyStatusChange()
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
                 }
 
