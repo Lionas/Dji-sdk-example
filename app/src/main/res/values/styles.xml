@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TopBarPanelStyle">
+        <!-- Common -->
+        <item name="uxsdk_itemsMarginRight">@dimen/uxsdk_spacing_normal</item>
+        <item name="uxsdk_itemsSpacing">@dimen/uxsdk_spacing_normal</item>
+
+        <!-- System Status -->
+        <item name="uxsdk_systemStatusMessageTextSize">@dimen/app_system_message_text_size</item>
+    </style>
+</resources>

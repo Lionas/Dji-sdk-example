@@ -154,18 +154,6 @@ class MainActivityViewController(private val activity: AppCompatActivity) : Life
             params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
             it.layoutParams = params
         }
-
-        // 各種UIカスタム
-        customTopBarPanel()
-    }
-
-    private fun customTopBarPanel() {
-        val topBarPanelCustom = TopBarPanelCustom(topBarPanelWidget)
-        val colorInt = activity.getColor(R.color.gray)
-        topBarPanelCustom.setSystemStatusMessageTextColor(colorInt)
-
-        val drawable = activity.getDrawable(R.drawable.fpv_gradient_left)
-        topBarPanelCustom.setSystemStatusBackgroundDrawable(drawable)
     }
 
     private fun onCreateProcess() {

@@ -34,4 +34,8 @@
     <dimen name="camera_bar_height">35dp</dimen>
     <dimen name="camera_bar_padding">6dp</dimen>
     <dimen name="top_bar_percent_height">0.1</dimen>
+
+    <!-- 以下はアプリカスタム -->
+    <dimen name="app_system_message_text_size">24sp</dimen>
+
 </resources>
