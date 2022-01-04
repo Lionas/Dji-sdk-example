@@ -20,8 +20,11 @@ import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
 import dji.thirdparty.io.reactivex.disposables.CompositeDisposable
 import dji.ux.beta.accessory.widget.rtk.RTKWidget
+import dji.ux.beta.cameracore.widget.cameracontrols.CameraControlsWidget
+import dji.ux.beta.cameracore.widget.cameracontrols.camerasettingsindicator.CameraSettingsMenuIndicatorWidget
 import dji.ux.beta.cameracore.widget.fpvinteraction.FPVInteractionWidget
 import dji.ux.beta.core.extension.hide
+import dji.ux.beta.core.extension.toggleVisibility
 import dji.ux.beta.core.panel.systemstatus.SystemStatusListPanelWidget
 import dji.ux.beta.core.panel.topbar.TopBarPanelWidget
 import dji.ux.beta.core.util.DisplayUtil
@@ -30,6 +33,8 @@ import dji.ux.beta.core.widget.radar.RadarWidget
 import dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
 import dji.ux.beta.map.widget.map.MapWidget
 import dji.ux.beta.training.widget.simulatorcontrol.SimulatorControlWidget
+import dji.ux.panel.CameraSettingAdvancedPanel
+import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
@@ -59,6 +64,12 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var systemStatusListPanelWidget: SystemStatusListPanelWidget? = null
     private var rtkWidget: RTKWidget? = null
     private var simulatorControlWidget: SimulatorControlWidget? = null
+
+    // for Camera
+    private var cameraControlsWidget: CameraControlsWidget? = null
+    private var cameraSettingsMenuIndicatorWidget: CameraSettingsMenuIndicatorWidget? = null
+    private var cameraSettingExposurePanel: CameraSettingExposurePanel? = null
+    private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -157,6 +168,23 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 val params = it.layoutParams as ConstraintLayout.LayoutParams
                 params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
                 it.layoutParams = params
+            }
+
+            // Camera Settings
+            cameraControlsWidget = activity.findViewById(R.id.camera_controls_widget)
+            cameraSettingsMenuIndicatorWidget = cameraControlsWidget?.cameraSettingsMenuIndicatorWidget
+            cameraSettingExposurePanel = activity.findViewById(R.id.camera_setting_exposure_panel)
+            // MENUをシングルタップでExposureの設定画面へ
+            cameraSettingsMenuIndicatorWidget?.setOnClickListener {
+                cameraSettingExposurePanel?.toggleVisibility()
+                hideOtherPanels(cameraSettingExposurePanel)
+            }
+            cameraSettingAdvancedPanel = activity.findViewById(R.id.camera_setting_advenced_panel)
+            // MENUをロングタップでその他のカメラの設定へ
+            cameraSettingsMenuIndicatorWidget?.setOnLongClickListener {
+                cameraSettingAdvancedPanel?.toggleVisibility()
+                hideOtherPanels(cameraSettingAdvancedPanel)
+                true
             }
         }
     }
@@ -262,7 +290,9 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private fun hideOtherPanels(widget: View?) {
         val panels = arrayOf<View?>(
             rtkWidget,
-            simulatorControlWidget
+            simulatorControlWidget,
+            cameraSettingExposurePanel,
+            cameraSettingAdvancedPanel
         )
         for (panel in panels) {
             if (widget !== panel) {

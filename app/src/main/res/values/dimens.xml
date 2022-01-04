@@ -38,5 +38,6 @@
     <!-- 以下はアプリカスタム -->
     <dimen name="app_system_message_text_size">24sp</dimen>
     <dimen name="txt_product_name_margin">24dp</dimen>
+    <dimen name="panel_end_margin">16dp</dimen>
 
 </resources>
