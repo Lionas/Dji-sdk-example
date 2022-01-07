@@ -4,17 +4,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.activity.MainActivity
-import com.dji.mapkit.core.maps.DJIMap
-import com.dji.mapkit.core.models.DJILatLng
+import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
 import dji.common.airlink.PhysicalSource
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
@@ -27,17 +28,19 @@ import dji.ux.beta.core.extension.hide
 import dji.ux.beta.core.extension.toggleVisibility
 import dji.ux.beta.core.panel.systemstatus.SystemStatusListPanelWidget
 import dji.ux.beta.core.panel.topbar.TopBarPanelWidget
-import dji.ux.beta.core.util.DisplayUtil
 import dji.ux.beta.core.util.SettingDefinitions
 import dji.ux.beta.core.widget.radar.RadarWidget
 import dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
-import dji.ux.beta.map.widget.map.MapWidget
 import dji.ux.beta.training.widget.simulatorcontrol.SimulatorControlWidget
 import dji.ux.panel.CameraSettingAdvancedPanel
 import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
+import com.google.android.gms.maps.SupportMapFragment
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
+    companion object {
+        const val TAG = "MainActivityViewController"
+    }
     private val weakActivityReference = WeakReference(appCompatActivity)
 
     // for custom UI
@@ -59,17 +62,31 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var radarWidget: RadarWidget? = null
     private var fpvWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
     private var fpvInteractionWidget: FPVInteractionWidget? = null
-    private var mapWidget: MapWidget? = null
+
+    //region map
+    //    private var mapWidget: MapWidget? = null
+    private var mapFragmentContainerView: FragmentContainerView? = null
+    private var mapFragment: SupportMapFragment? = null
+    // callback from map controller
+    private val callback = object: MainActivityViewControllerCallback {
+        override fun onMapClick() {
+            onViewClick(mapFragmentContainerView)
+        }
+    }
+    private val mapController: MapViewController = MapViewController(weakActivityReference.get(), callback)
+    //endregion
+
     private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
     private var systemStatusListPanelWidget: SystemStatusListPanelWidget? = null
     private var rtkWidget: RTKWidget? = null
     private var simulatorControlWidget: SimulatorControlWidget? = null
 
-    // for Camera
+    //region for Camera
     private var cameraControlsWidget: CameraControlsWidget? = null
     private var cameraSettingsMenuIndicatorWidget: CameraSettingsMenuIndicatorWidget? = null
     private var cameraSettingExposurePanel: CameraSettingExposurePanel? = null
     private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
+    //endregion
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -110,7 +127,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 onViewClick(fpvWidget)
             }
             fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
-            mapWidget = activity.findViewById(R.id.widget_map)
+            mapFragmentContainerView = activity.findViewById(R.id.widget_map)
             secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
             secondaryFPVWidget?.setOnClickListener {
                 swapVideoSource()
@@ -118,7 +135,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             systemStatusListPanelWidget = activity.findViewById(R.id.widget_panel_system_status_list)
             rtkWidget = activity.findViewById(R.id.widget_rtk)
             simulatorControlWidget = activity.findViewById(R.id.widget_simulator_control)
-
+            userAccountLoginWidget = activity.findViewById(R.id.widget_user_login)
             parentView = activity.findViewById(R.id.root_view)
 
             widgetHeight = activity.resources.getDimension(R.dimen.mini_map_height).toInt()
@@ -130,16 +147,13 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             deviceWidth = displayMetrics.widthPixels
 
             setM200SeriesWarningLevelRanges()
-            mapWidget?.let {
-                it.initAMap { map: DJIMap ->
-                    map.setOnMapClickListener { latLng: DJILatLng? ->
-                        onViewClick(it)
-                    }
-                    map.uiSettings.setZoomControlsEnabled(false)
-                }
-                it.userAccountLoginWidget.visibility = View.GONE
-                it.onCreate(savedInstanceState)
+
+            mapFragmentContainerView?.let {
+                mapFragment = activity.supportFragmentManager.findFragmentById(R.id.widget_map) as SupportMapFragment
+                mapFragment?.getMapAsync(mapController)
             }
+
+            userAccountLoginWidget?.visibility = View.GONE
 
             // Setup top bar state callbacks
             topBarPanelWidget = activity.findViewById(R.id.panel_top_bar)
@@ -159,15 +173,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             if (gpsSignalWidget != null) {
                 gpsSignalWidget.stateChangeCallback =
                     activity.findViewById(R.id.widget_rtk)
-            }
-
-            mapWidget?.let {
-                userAccountLoginWidget = it.userAccountLoginWidget
-            }
-            userAccountLoginWidget?.let {
-                val params = it.layoutParams as ConstraintLayout.LayoutParams
-                params.topMargin = deviceHeight / 10 + DisplayUtil.dipToPx(activity, 10f).toInt()
-                it.layoutParams = params
             }
 
             // Camera Settings
@@ -194,7 +199,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     }
 
     private fun onResumeProcess() {
-        mapWidget?.onResume()
         compositeDisposable = CompositeDisposable()
         secondaryFPVWidget?.let {
             compositeDisposable?.add(
@@ -245,11 +249,11 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     }
 
     fun onSaveInstanceState(outState: Bundle) {
-        mapWidget?.onSaveInstanceState(outState)
     }
 
     fun onLowMemory() {
-        mapWidget?.onLowMemory()
+        // TODO
+//        mapWidget?.onLowMemory()
     }
 
     private fun onPauseProcess() {
@@ -257,7 +261,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             it.dispose()
             compositeDisposable = null
         }
-        mapWidget?.onPause()
     }
 
     /**
@@ -323,23 +326,34 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         if (view === fpvWidget && !isMapMini) {
             //reorder widgets
             parentView?.removeView(fpvWidget)
-            parentView?.addView(fpvWidget, 0)
+            try {
+                parentView?.addView(fpvWidget, 0)
+            } catch (e: IllegalStateException) {
+                // 連打対応
+                Log.e(TAG, e.localizedMessage ?: "IllegalStateException")
+                parentView?.postDelayed({
+                    parentView?.addView(fpvWidget, 0)
+                }, 1000L)
+            }
 
             //resize widgets
-            resizeViews(fpvWidget, mapWidget)
+            resizeViews(fpvWidget, mapFragmentContainerView)
             //enable interaction on FPV
             fpvInteractionWidget?.isInteractionEnabled = true
             //disable user login widget on map
             userAccountLoginWidget?.visibility = View.GONE
             isMapMini = true
-        } else if (view === mapWidget && isMapMini) {
+
+            // update(move) map position
+            mapController.cameraUpdate()
+
+        } else if (view === mapFragmentContainerView && isMapMini) {
             // reorder widgets
             parentView?.let {
                 it.removeView(fpvWidget)
-                it.addView(fpvWidget, it.indexOfChild(mapWidget) + 1)
+                it.addView(fpvWidget, it.indexOfChild(mapFragmentContainerView) + 1)
                 //resize widgets
-                resizeViews(mapWidget, fpvWidget)
-
+                resizeViews(mapFragmentContainerView, fpvWidget)
             }
             //disable interaction on FPV
             fpvInteractionWidget?.isInteractionEnabled = false
@@ -433,4 +447,11 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             Lifecycle.Event.ON_ANY -> Unit
         }
     }
+
+    //region MapController
+    fun updateDroneLocation(lat: Double, lng: Double) {
+        mapController.setDroneLocation(lat, lng)
+        mapController.updateDroneLocation()
+    }
+    //endregion
 }

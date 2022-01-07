@@ -18,10 +18,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import dji.common.useraccount.UserAccountState
-
 import dji.common.util.CommonCallbacks.CompletionCallbackWith
-
 import dji.sdk.useraccount.UserAccountManager
+import dji.sdk.flightcontroller.FlightController
+import dji.sdk.products.Aircraft
 
 class MainActivityPresenter(private val activityCallback: MainActivityCallback) {
     companion object {
@@ -49,6 +49,10 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
 
     private var lastProgress = -1
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    //region definition for flight controller
+    private var flightController: FlightController? = null
+    //endregion
 
     fun checkAndRequestPermissions(context: Context) {
         // Check for permissions
@@ -123,13 +127,13 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                     Log.d(TAG, "onProductDisconnect")
                     activityCallback.setStatusMessage("Product Disconnected")
                     setProduct()
-                    activityCallback.notifyStatusChange()
+                    notifyStatusChange()
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
                     activityCallback.setStatusMessage("Product connected")
                     setProduct()
-                    activityCallback.notifyStatusChange()
+                    notifyStatusChange()
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
@@ -150,7 +154,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                     }
                     activityCallback.setStatusMessage("onComponentChanged")
                     setProduct()
-                    activityCallback.notifyStatusChange()
+                    notifyStatusChange()
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
                 }
 
@@ -176,6 +180,11 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
         }
     }
 
+    private fun notifyStatusChange() {
+        initFlightController()
+        activityCallback.notifyStatusChange()
+    }
+
     private fun loginAccount(context: Context) {
         UserAccountManager.getInstance().logIntoDJIUserAccount(
             context,
@@ -194,4 +203,22 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
     private fun setProduct() {
         activityCallback.setProduct(djiSdkManager?.product?.model?.displayName ?: "(none)")
     }
+
+    //region function for flight controller
+    private fun initFlightController() {
+        val product: BaseProduct? = DJISDKManager.getInstance().product
+        if (product != null && product.isConnected) {
+            if (product is Aircraft) {
+                flightController = product.flightController
+            }
+        }
+        flightController?.let {
+            it.setStateCallback { djiFlightControllerCurrentState ->
+                val lat = djiFlightControllerCurrentState.aircraftLocation.latitude
+                val lng = djiFlightControllerCurrentState.aircraftLocation.longitude
+                activityCallback.updateDroneLocation(lat, lng)
+            }
+        }
+    }
+    //endregion
 }

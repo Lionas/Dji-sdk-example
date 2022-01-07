@@ -50,6 +50,10 @@ class MainActivity : AppCompatActivity() {
         override fun notifyStatusChange() {
             uiController.notifyStatusChange()
         }
+
+        override fun updateDroneLocation(lat: Double, lng: Double) {
+            uiController.updateDroneLocation(lat, lng)
+        }
     }
 
     private val presenter = MainActivityPresenter(callback)

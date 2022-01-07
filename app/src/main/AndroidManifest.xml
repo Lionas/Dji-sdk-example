@@ -29,6 +29,11 @@
         android:name="android.hardware.usb.accessory"
         android:required="true" />
 
+    <!-- for Google Map -->
+    <uses-feature
+        android:glEsVersion="0x00020000"
+        android:required="true" />
+
     <!-- Permissions and features -->
 
     <application

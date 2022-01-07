@@ -8,4 +8,8 @@ interface MainActivityCallback {
     fun requestPermissions(missingPermission: MutableList<String>)
     fun setProduct(name: String)
     fun notifyStatusChange()
+
+    //region map control
+    fun updateDroneLocation(lat: Double, lng: Double)
+    //endregion
 }

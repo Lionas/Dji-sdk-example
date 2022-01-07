@@ -207,17 +207,28 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.45" />
 
-    <dji.ux.beta.map.widget.map.MapWidget
+    <!-- google map -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/widget_map"
         android:layout_width="@dimen/mini_map_width"
         android:layout_height="@dimen/mini_map_height"
         android:layout_marginEnd="12dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="@dimen/dp_20_in_sw320dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:uxsdk_djiMap_mapType="normal" />
+        android:name="com.google.android.gms.maps.SupportMapFragment" />
 
     <!-- Everything below this line will appear on top of the full-screen map view -->
+
+    <!-- login -->
+    <dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
+        android:id="@+id/widget_user_login"
+        android:layout_width="220dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="@dimen/dp_10_in_sw320dp"
+        app:layout_constraintTop_toBottomOf="@+id/widget_remaining_flight_time"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
     <!-- top bar -->
     <dji.ux.beta.core.panel.topbar.TopBarPanelWidget
