@@ -54,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         override fun updateDroneLocation(lat: Double, lng: Double) {
             uiController.updateDroneLocation(lat, lng)
         }
+
+        override fun setEnableWayPoint(enable: Boolean) {
+            uiController.setEnableWayPoint(enable)
+        }
     }
 
     private val presenter = MainActivityPresenter(callback)
@@ -67,7 +71,7 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize UI
         lifecycle.addObserver(uiController)
-        uiController.initUxSdkUI(savedInstanceState)
+        uiController.initUI(savedInstanceState)
 
         // Check Require Permissions
         presenter.checkAndRequestPermissions(baseContext)

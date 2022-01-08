@@ -1,8 +1,11 @@
 package com.dji.djisdkdemo.interfaces
 
+import com.google.android.gms.maps.model.LatLng
+
 /**
- * MapControllerからMainActivityViewControllerの処理を呼び出すインタフェース
+ * MapViewControllerからMainActivityViewControllerの処理を呼び出すインタフェース
  */
 interface MainActivityViewControllerCallback {
     fun onMapClick()
+    fun addWaypoint(latLng: LatLng)
 }

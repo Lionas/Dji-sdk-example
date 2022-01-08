@@ -12,4 +12,8 @@ interface MainActivityCallback {
     //region map control
     fun updateDroneLocation(lat: Double, lng: Double)
     //endregion
+
+    //region waypoint
+    fun setEnableWayPoint(enable: Boolean)
+    //endregion
 }

@@ -1,4 +1,13 @@
 <resources>
     <string name="app_name">DJISdkDemo</string>
     <string name="txt_product_default">(none)</string>
+
+    <!-- MainActivity -->
+    <string name="dialog_title_waypoint_mode">Way Point Control</string>
+    <string name="dialog_title_waypoint_config">Waypoint Configuration</string>
+
+    <!-- Waypoint -->
+    <string name="waypoint_mode_desc">WaypointMode</string>
+    <string name="add">Add</string>
+    <string name="exit">Exit</string>
 </resources>

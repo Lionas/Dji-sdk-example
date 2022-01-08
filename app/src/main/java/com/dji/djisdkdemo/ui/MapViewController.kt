@@ -9,6 +9,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.*
 import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
 
 class MapViewController(
     appCompatActivity: AppCompatActivity?,
@@ -62,7 +63,11 @@ class MapViewController(
 
     override fun onMapClick(latlng: LatLng) {
         gMap?.let {
-            it.setOnMapClickListener {
+            if (isAddWaypointMode){
+                // add waypoint
+                markWaypoint(latlng)
+                callback.addWaypoint(latlng)
+            } else {
                 callback.onMapClick()
             }
         }
@@ -105,4 +110,34 @@ class MapViewController(
         val cu: CameraUpdate = CameraUpdateFactory.newLatLngZoom(pos, cameraZoomLevel)
         gMap?.moveCamera(cu)
     }
+
+    //region Waypoint
+    private var isAddWaypointMode: Boolean = false
+
+    fun flipAddWaypointMode() {
+        isAddWaypointMode = isAddWaypointMode.not()
+    }
+
+    fun isAddWaypointMode(): Boolean {
+        return isAddWaypointMode
+    }
+
+    private var waypointMarkers: MutableMap<Int, Marker> = ConcurrentHashMap<Int, Marker>()
+
+    private fun markWaypoint(point: LatLng) {
+        val markerOptions = MarkerOptions()
+        markerOptions.position(point)
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+        val marker = gMap?.addMarker(markerOptions)
+        marker?.let {
+            waypointMarkers.apply {
+                this[this.size] = it
+            }
+        }
+    }
+
+    fun clearMap() {
+        gMap?.clear()
+    }
+    //endregion
 }

@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -36,6 +37,17 @@ import dji.ux.panel.CameraSettingAdvancedPanel
 import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import com.google.android.gms.maps.SupportMapFragment
+
+import dji.common.mission.waypoint.WaypointMissionHeadingMode
+import android.widget.RadioGroup
+import android.widget.LinearLayout
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.view.ContextThemeWrapper
+import androidx.appcompat.widget.AppCompatImageButton
+import androidx.core.widget.NestedScrollView
+import com.dji.djisdkdemo.presenter.WayPointMissionPresenter
+import com.google.android.gms.maps.model.LatLng
+import dji.common.mission.waypoint.WaypointMissionFinishedAction
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
@@ -67,13 +79,21 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     //    private var mapWidget: MapWidget? = null
     private var mapFragmentContainerView: FragmentContainerView? = null
     private var mapFragment: SupportMapFragment? = null
-    // callback from map controller
+
+    // callback from map view controller
     private val callback = object: MainActivityViewControllerCallback {
         override fun onMapClick() {
             onViewClick(mapFragmentContainerView)
         }
+
+        // Waypoint
+        override fun addWaypoint(latLng: LatLng) {
+            wayPointMissionPresenter.addWaypoint(latLng)
+        }
     }
-    private val mapController: MapViewController = MapViewController(weakActivityReference.get(), callback)
+
+    private val mapViewController: MapViewController =
+        MapViewController(weakActivityReference.get(), callback)
     //endregion
 
     private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
@@ -119,7 +139,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         weakActivityReference.get()?.sendBroadcast(intent)
     }
 
-    fun initUxSdkUI(savedInstanceState: Bundle?) {
+    fun initUI(savedInstanceState: Bundle?) {
         weakActivityReference.get()?.let { activity ->
             radarWidget = activity.findViewById(R.id.widget_radar)
             fpvWidget = activity.findViewById(R.id.widget_fpv)
@@ -150,7 +170,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
             mapFragmentContainerView?.let {
                 mapFragment = activity.supportFragmentManager.findFragmentById(R.id.widget_map) as SupportMapFragment
-                mapFragment?.getMapAsync(mapController)
+                mapFragment?.getMapAsync(mapViewController)
             }
 
             userAccountLoginWidget?.visibility = View.GONE
@@ -190,6 +210,12 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 cameraSettingAdvancedPanel?.toggleVisibility()
                 hideOtherPanels(cameraSettingAdvancedPanel)
                 true
+            }
+
+            // Waypoint
+            wayPointModeBtn = activity.findViewById(R.id.btn_waypoint_mode)
+            wayPointModeBtn.setOnClickListener {
+                showWayPointControlDialog()
             }
         }
     }
@@ -345,7 +371,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             isMapMini = true
 
             // update(move) map position
-            mapController.cameraUpdate()
+            mapViewController.cameraUpdate()
 
         } else if (view === mapFragmentContainerView && isMapMini) {
             // reorder widgets
@@ -371,27 +397,15 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
      */
     private fun resizeViews(viewToEnlarge: View?, viewToShrink: View?) {
         //enlarge first widget
-        val enlargeAnimation: ResizeAnimation =
-            ResizeAnimation(
-                viewToEnlarge,
-                widgetWidth,
-                widgetHeight,
-                deviceWidth,
-                deviceHeight,
-                0
-            )
+        val enlargeAnimation = ResizeAnimation(
+            viewToEnlarge, widgetWidth, widgetHeight, deviceWidth, deviceHeight, 0
+        )
         viewToEnlarge?.startAnimation(enlargeAnimation)
 
         //shrink second widget
-        val shrinkAnimation: ResizeAnimation =
-            ResizeAnimation(
-                viewToShrink,
-                deviceWidth,
-                deviceHeight,
-                widgetWidth,
-                widgetHeight,
-                widgetMargin
-            )
+        val shrinkAnimation = ResizeAnimation(
+            viewToShrink, deviceWidth, deviceHeight, widgetWidth, widgetHeight, widgetMargin
+        )
         viewToShrink?.startAnimation(shrinkAnimation)
     }
 
@@ -434,6 +448,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
                 onCreateProcess()
+                onCreateWayPoint()
             }
             Lifecycle.Event.ON_RESUME -> {
                 onResumeProcess()
@@ -443,15 +458,205 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             }
             Lifecycle.Event.ON_START -> Unit
             Lifecycle.Event.ON_STOP -> Unit
-            Lifecycle.Event.ON_DESTROY -> Unit
+            Lifecycle.Event.ON_DESTROY -> {
+                onDestroyWayPoint()
+            }
             Lifecycle.Event.ON_ANY -> Unit
         }
     }
 
     //region MapController
     fun updateDroneLocation(lat: Double, lng: Double) {
-        mapController.setDroneLocation(lat, lng)
-        mapController.updateDroneLocation()
+        mapViewController.setDroneLocation(lat, lng)
+        mapViewController.updateDroneLocation()
+    }
+    //endregion
+
+    //region Waypoint
+    private lateinit var wayPointMissionPresenter: WayPointMissionPresenter
+    private lateinit var addBtn: Button
+    private lateinit var clearBtn: Button
+    private lateinit var configBtn: Button
+    private lateinit var uploadBtn: Button
+    private lateinit var startBtn: Button
+    private lateinit var stopBtn: Button
+    private lateinit var wayPointModeBtn: AppCompatImageButton
+
+    fun setEnableWayPoint(enable: Boolean) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                if (enable) {
+                    wayPointModeBtn.visibility = View.VISIBLE
+                } else {
+                    wayPointModeBtn.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun onCreateWayPoint() {
+        wayPointMissionPresenter = WayPointMissionPresenter()
+        wayPointMissionPresenter.addListener()
+    }
+
+    private fun onDestroyWayPoint() {
+        wayPointMissionPresenter.removeListener()
+    }
+
+    private fun showWayPointControlDialog() {
+        weakActivityReference.get()?.let {
+            val wayPointControl = it.layoutInflater
+                .inflate(R.layout.dialog_waypoint_control, null) as LinearLayout
+            wayPointControl.apply {
+                addBtn = findViewById<View>(R.id.add) as Button
+                addBtn.setOnClickListener {
+                    enableDisableAdd()
+                }
+                clearBtn = findViewById<View>(R.id.clear) as Button
+                clearBtn.setOnClickListener {
+                    mapViewController.clearMap()
+                }
+                configBtn = findViewById<View>(R.id.config) as Button
+                configBtn.setOnClickListener {
+                    showSettingDialog()
+                }
+                uploadBtn = findViewById<View>(R.id.upload) as Button
+                uploadBtn.setOnClickListener {
+                    wayPointMissionPresenter.uploadWayPointMission()
+                }
+                startBtn = findViewById<View>(R.id.start) as Button
+                startBtn.setOnClickListener {
+                    wayPointMissionPresenter.startWaypointMission()
+                }
+                stopBtn = findViewById<View>(R.id.stop) as Button
+                stopBtn.setOnClickListener {
+                    wayPointMissionPresenter.stopWaypointMission()
+                }
+            }
+
+            AlertDialog.Builder(ContextThemeWrapper(it, R.style.DialogTheme))
+                .setTitle("")
+                .setView(wayPointControl)
+                .setPositiveButton("Close") { dialog, _ -> dialog.cancel() }
+                .create()
+                .show()
+        }
+    }
+
+    private fun enableDisableAdd() {
+        weakActivityReference.get()?.let {
+            // flip mode
+            mapViewController.flipAddWaypointMode()
+            // change button label
+            val text = if (mapViewController.isAddWaypointMode()) {
+                it.resources.getString(R.string.exit)
+            } else {
+                it.resources.getString(R.string.add)
+            }
+            addBtn.text = text
+        }
+    }
+
+    // TODO 設定ずみの数字を取るようにする
+    private fun showSettingDialog() {
+        weakActivityReference.get()?.let {
+            val wayPointSettings =
+                it.layoutInflater.inflate(R.layout.dialog_waypoint_setting, null) as NestedScrollView
+            wayPointSettings.apply {
+                // Altitude
+                val wpAltitude = findViewById<View>(R.id.altitude) as TextView
+
+                // Speed
+                val speed = findViewById<View>(R.id.speed) as RadioGroup
+                speed.setOnCheckedChangeListener { _, checkedId ->
+                    when (checkedId) {
+                        R.id.lowSpeed -> {
+                            wayPointMissionPresenter.setSpeed(WayPointMissionPresenter.SPEED.LOW)
+                        }
+                        R.id.MidSpeed -> {
+                            wayPointMissionPresenter.setSpeed(WayPointMissionPresenter.SPEED.MIDDLE)
+                        }
+                        R.id.HighSpeed -> {
+                            wayPointMissionPresenter.setSpeed(WayPointMissionPresenter.SPEED.HIGH)
+                        }
+                    }
+                }
+
+                // Action after finished mission
+                val actionAfterFinished =
+                    findViewById<View>(R.id.actionAfterFinished) as RadioGroup
+                actionAfterFinished.setOnCheckedChangeListener { _, checkedId ->
+                    Log.d(TAG, "Select finish action")
+                    when (checkedId) {
+                        R.id.finishNone -> {
+                            wayPointMissionPresenter.setFinishedAction(
+                                WaypointMissionFinishedAction.NO_ACTION
+                            )
+                        }
+                        R.id.finishGoHome -> {
+                            wayPointMissionPresenter.setFinishedAction(
+                                WaypointMissionFinishedAction.GO_HOME
+                            )
+                        }
+                        R.id.finishAutoLanding -> {
+                            wayPointMissionPresenter.setFinishedAction(
+                                WaypointMissionFinishedAction.AUTO_LAND
+                            )
+                        }
+                        R.id.finishToFirst -> {
+                            wayPointMissionPresenter.setFinishedAction(
+                                WaypointMissionFinishedAction.GO_FIRST_WAYPOINT
+                            )
+                        }
+                    }
+                }
+
+                // Heading
+                val heading = findViewById<View>(R.id.heading) as RadioGroup
+                heading.setOnCheckedChangeListener { group, checkedId ->
+                    Log.d(TAG, "Select heading")
+                    when (checkedId) {
+                        R.id.headingNext -> {
+                            wayPointMissionPresenter.setHeadingMode(
+                                WaypointMissionHeadingMode.AUTO
+                            )
+                        }
+                        R.id.headingInitDirec -> {
+                            wayPointMissionPresenter.setHeadingMode(
+                                WaypointMissionHeadingMode.USING_INITIAL_DIRECTION
+                            )
+                        }
+                        R.id.headingRC -> {
+                            wayPointMissionPresenter.setHeadingMode(
+                                WaypointMissionHeadingMode.CONTROL_BY_REMOTE_CONTROLLER
+                            )
+                        }
+                        R.id.headingWP -> {
+                            wayPointMissionPresenter.setHeadingMode(
+                                WaypointMissionHeadingMode.USING_WAYPOINT_HEADING
+                            )
+                        }
+                    }
+                }
+
+                // Create Dialog
+                AlertDialog.Builder(ContextThemeWrapper(it, R.style.DialogTheme))
+                    .setTitle("")
+                    .setView(wayPointSettings)
+                    .setPositiveButton("Finish") { _, _ ->
+                        // set altitude
+                        val altitudeString = wpAltitude.text.toString()
+                        wayPointMissionPresenter.setAltitude(altitudeString.trim().toIntOrNull())
+                        // display setting logs
+                        wayPointMissionPresenter.printSettings()
+                        // load mission
+                        wayPointMissionPresenter.configWayPointMission()
+                    }
+                    .setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() }
+                    .create()
+                    .show()
+            }
+        }
     }
     //endregion
 }

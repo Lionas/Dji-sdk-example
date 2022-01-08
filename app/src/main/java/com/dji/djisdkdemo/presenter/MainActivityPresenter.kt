@@ -210,7 +210,13 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
         if (product != null && product.isConnected) {
             if (product is Aircraft) {
                 flightController = product.flightController
+
+                // Waypointボタンを表示する
+                activityCallback.setEnableWayPoint(true)
             }
+        } else {
+            // Waypointボタンを非表示にする
+            activityCallback.setEnableWayPoint(false)
         }
         flightController?.let {
             it.setStateCallback { djiFlightControllerCurrentState ->

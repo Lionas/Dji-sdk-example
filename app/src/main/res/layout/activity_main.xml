@@ -333,6 +333,23 @@
         app:layout_constraintHeight_percent="0.25"
         app:layout_constraintLeft_toRightOf="@+id/widget_compass" />
 
+    <!-- Waypoint -->
+    <ImageButton
+        android:id="@+id/btn_waypoint_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="100dp"
+        android:layout_marginStart="12dp"
+        app:layout_constraintTop_toBottomOf="@+id/panel_top_bar"
+        app:layout_constraintBottom_toTopOf="@+id/widget_take_off"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintHeight_percent="0.1"
+        android:src="@drawable/ic_access_locker_info"
+        android:scaleType="fitCenter"
+        android:contentDescription="@string/waypoint_mode_desc"
+        android:visibility="gone"
+        />
+
     <dji.ux.beta.flight.widget.takeoff.TakeOffWidget
         android:id="@+id/widget_take_off"
         android:layout_width="0dp"
