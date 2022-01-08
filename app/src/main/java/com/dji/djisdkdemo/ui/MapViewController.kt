@@ -1,16 +1,13 @@
 package com.dji.djisdkdemo.ui
 
-import android.R
 import androidx.appcompat.app.AppCompatActivity
+import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
 import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.*
 import java.lang.ref.WeakReference
 
 class MapViewController(
@@ -47,7 +44,10 @@ class MapViewController(
             setUpMap()
         }
         gMap?.let {
-            it.addMarker(MarkerOptions().position(initMapPosition))
+            droneLocationLat = initMapPosition.latitude
+            droneLocationLng = initMapPosition.longitude
+            val markerOptions = makeMarkerOptions()
+            droneMarker = gMap?.addMarker(markerOptions)
             cameraUpdate()
         }
     }
@@ -95,9 +95,8 @@ class MapViewController(
         val pos = LatLng(droneLocationLat, droneLocationLng)
         val markerOptions = MarkerOptions()
         markerOptions.position(pos)
-
-        // TODO リソース変える（できればドローンのアイコンに）
-        markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_menu_help))
+        val droneIcon = BitmapDescriptorFactory.fromResource(R.mipmap.ic_drone)
+        markerOptions.icon(droneIcon)
         return markerOptions
     }
 
