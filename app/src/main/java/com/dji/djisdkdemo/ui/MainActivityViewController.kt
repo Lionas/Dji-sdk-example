@@ -36,6 +36,7 @@ import dji.ux.panel.CameraSettingAdvancedPanel
 import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import com.google.android.gms.maps.SupportMapFragment
+import dji.ux.beta.core.widget.fpv.FPVWidget
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
@@ -60,7 +61,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private lateinit var topBarPanelWidget: TopBarPanelWidget
     private var parentView: ConstraintLayout? = null
     private var radarWidget: RadarWidget? = null
-    private var fpvWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
+    private var fpvWidget: FPVWidget? = null
     private var fpvInteractionWidget: FPVInteractionWidget? = null
 
     //region map
@@ -324,42 +325,34 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
      */
     private fun onViewClick(view: View?) {
         if (view === fpvWidget && !isMapMini) {
-            //reorder widgets
-            parentView?.removeView(fpvWidget)
-            try {
-                parentView?.addView(fpvWidget, 0)
-            } catch (e: IllegalStateException) {
-                // 連打対応
-                Log.e(TAG, e.localizedMessage ?: "IllegalStateException")
-                parentView?.postDelayed({
-                    parentView?.addView(fpvWidget, 0)
-                }, 1000L)
-            }
-
-            //resize widgets
-            resizeViews(fpvWidget, mapFragmentContainerView)
-            //enable interaction on FPV
-            fpvInteractionWidget?.isInteractionEnabled = true
-            //disable user login widget on map
-            userAccountLoginWidget?.visibility = View.GONE
-            isMapMini = true
-
-            // update(move) map position
-            mapViewController.cameraUpdate()
-
-        } else if (view === mapFragmentContainerView && isMapMini) {
-            // reorder widgets
             parentView?.let {
+                //reorder widgets
+                it.removeView(fpvWidget)
+                it.addView(fpvWidget, 0)
+                //resize widgets
+                resizeViews(fpvWidget, mapFragmentContainerView)
+                //enable interaction on FPV
+                fpvInteractionWidget?.isInteractionEnabled = true
+                //disable user login widget on map
+                userAccountLoginWidget?.visibility = View.GONE
+                isMapMini = true
+
+                // update(move) map position
+                mapViewController.cameraUpdate()
+            }
+        } else if (view === mapFragmentContainerView && isMapMini) {
+            parentView?.let {
+                // reorder widgets
                 it.removeView(fpvWidget)
                 it.addView(fpvWidget, it.indexOfChild(mapFragmentContainerView) + 1)
                 //resize widgets
                 resizeViews(mapFragmentContainerView, fpvWidget)
+                //disable interaction on FPV
+                fpvInteractionWidget?.isInteractionEnabled = false
+                //enable user login widget on map
+                userAccountLoginWidget?.visibility = View.VISIBLE
+                isMapMini = false
             }
-            //disable interaction on FPV
-            fpvInteractionWidget?.isInteractionEnabled = false
-            //enable user login widget on map
-            userAccountLoginWidget?.visibility = View.VISIBLE
-            isMapMini = false
         }
     }
 

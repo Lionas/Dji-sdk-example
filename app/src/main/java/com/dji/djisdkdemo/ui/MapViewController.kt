@@ -61,11 +61,7 @@ class MapViewController(
     }
 
     override fun onMapClick(latlng: LatLng) {
-        gMap?.let {
-            it.setOnMapClickListener {
-                callback.onMapClick()
-            }
-        }
+        callback.onMapClick()
     }
 
     fun setDroneLocation(lat: Double, lng: Double) {
