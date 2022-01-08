@@ -119,7 +119,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         weakActivityReference.get()?.sendBroadcast(intent)
     }
 
-    fun initUxSdkUI(savedInstanceState: Bundle?) {
+    fun initUI(savedInstanceState: Bundle?) {
         weakActivityReference.get()?.let { activity ->
             radarWidget = activity.findViewById(R.id.widget_radar)
             fpvWidget = activity.findViewById(R.id.widget_fpv)

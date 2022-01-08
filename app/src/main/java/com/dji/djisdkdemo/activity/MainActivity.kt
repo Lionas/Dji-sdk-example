@@ -67,7 +67,7 @@ class MainActivity : AppCompatActivity() {
 
         // Initialize UI
         lifecycle.addObserver(uiController)
-        uiController.initUxSdkUI(savedInstanceState)
+        uiController.initUI(savedInstanceState)
 
         // Check Require Permissions
         presenter.checkAndRequestPermissions(baseContext)
