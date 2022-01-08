@@ -73,7 +73,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             onViewClick(mapFragmentContainerView)
         }
     }
-    private val mapController: MapViewController = MapViewController(weakActivityReference.get(), callback)
+    private val mapViewController: MapViewController = MapViewController(weakActivityReference.get(), callback)
     //endregion
 
     private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
@@ -150,7 +150,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
             mapFragmentContainerView?.let {
                 mapFragment = activity.supportFragmentManager.findFragmentById(R.id.widget_map) as SupportMapFragment
-                mapFragment?.getMapAsync(mapController)
+                mapFragment?.getMapAsync(mapViewController)
             }
 
             userAccountLoginWidget?.visibility = View.GONE
@@ -345,7 +345,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             isMapMini = true
 
             // update(move) map position
-            mapController.cameraUpdate()
+            mapViewController.cameraUpdate()
 
         } else if (view === mapFragmentContainerView && isMapMini) {
             // reorder widgets
@@ -450,8 +450,8 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
     //region MapController
     fun updateDroneLocation(lat: Double, lng: Double) {
-        mapController.setDroneLocation(lat, lng)
-        mapController.updateDroneLocation()
+        mapViewController.setDroneLocation(lat, lng)
+        mapViewController.updateDroneLocation()
     }
     //endregion
 }
