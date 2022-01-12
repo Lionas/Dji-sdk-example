@@ -1,20 +1,16 @@
 package com.dji.djisdkdemo.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
 import dji.common.airlink.PhysicalSource
 import dji.common.product.Model
@@ -37,6 +33,12 @@ import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import com.google.android.gms.maps.SupportMapFragment
 import dji.ux.beta.core.widget.fpv.FPVWidget
+import android.text.TextUtils
+import android.view.inputmethod.EditorInfo
+import android.widget.*
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.isVisible
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
@@ -73,6 +75,15 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         override fun onMapClick() {
             onViewClick(mapFragmentContainerView)
         }
+
+        override fun showSurroundFlyZonesInTv(info: String) {
+            // for fly zone
+            unlockStatusTextView?.text = info
+        }
+
+        override fun showToast(msg: String) {
+            showToastLong(msg)
+        }
     }
     private val mapViewController: MapViewController = MapViewController(weakActivityReference.get(), callback)
     //endregion
@@ -87,6 +98,15 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var cameraSettingsMenuIndicatorWidget: CameraSettingsMenuIndicatorWidget? = null
     private var cameraSettingExposurePanel: CameraSettingExposurePanel? = null
     private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
+    //endregion
+
+    //region fly zone
+    private var unlockButton: AppCompatImageView? = null
+    private var layoutFlyZone: ConstraintLayout? = null
+    private var geoGetSurroundingNFZButton: Button? = null
+    private var geoUnlockNFZsButton: Button? = null
+    private var getUnlockedFlyZonesButton: Button? = null
+    private var unlockStatusTextView: TextView? = null
     //endregion
 
     private val handler = Handler(Looper.getMainLooper())
@@ -110,14 +130,16 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
-    fun notifyStatusChange() {
-        handler.removeCallbacks(updateRunnable)
-        handler.postDelayed(updateRunnable, 500)
-    }
-
-    private val updateRunnable = Runnable {
-        val intent = Intent(MainActivity.FLAG_CONNECTION_CHANGE)
-        weakActivityReference.get()?.sendBroadcast(intent)
+    fun notifyStatusChange(isAircraftConnected: Boolean) {
+        weakActivityReference.get()?.let { it ->
+            it.runOnUiThread {
+                if (isAircraftConnected) {
+                    unlockButton?.visibility = View.VISIBLE
+                } else {
+                    unlockButton?.visibility = View.GONE
+                }
+            }
+        }
     }
 
     fun initUI(savedInstanceState: Bundle?) {
@@ -192,11 +214,39 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 hideOtherPanels(cameraSettingAdvancedPanel)
                 true
             }
+
+            //region fly zone
+            unlockButton = activity.findViewById(R.id.btn_unlock)
+            unlockButton?.setOnClickListener {
+                layoutFlyZone = activity.findViewById(R.id.layout_fly_zone_control)
+                layoutFlyZone?.let {
+                    if (it.isVisible) {
+                        it.visibility = View.GONE
+                    } else {
+                        it.visibility = View.VISIBLE
+                    }
+                }
+            }
+            geoGetSurroundingNFZButton = activity.findViewById(R.id.geo_get_surrounding_nfz_btn)
+            geoGetSurroundingNFZButton?.setOnClickListener {
+                mapViewController.printSurroundFlyZones()
+            }
+            geoUnlockNFZsButton = activity.findViewById(R.id.geo_unlock_nfzs_btn)
+            geoUnlockNFZsButton?.setOnClickListener {
+                callUnlockFlyZonesDialog()
+            }
+            getUnlockedFlyZonesButton = activity.findViewById(R.id.geo_get_unlock_nfzs_btn)
+            getUnlockedFlyZonesButton?.setOnClickListener {
+                mapViewController.getUnlockedFlyZones()
+            }
+            unlockStatusTextView = activity.findViewById(R.id.txt_unlock_status)
+            //endregion
         }
     }
 
     private fun onCreateProcess() {
         initCustomUI()
+        initFlyZone()
     }
 
     private fun onResumeProcess() {
@@ -445,6 +495,53 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     fun updateDroneLocation(lat: Double, lng: Double) {
         mapViewController.setDroneLocation(lat, lng)
         mapViewController.updateDroneLocation()
+    }
+    //endregion
+
+    //region FlyZone
+    fun showToastLong(msg: String) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                Toast.makeText(it, msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun initFlyZone() {
+        mapViewController.initFlyZone()
+    }
+
+    private fun callUnlockFlyZonesDialog() {
+        weakActivityReference.get()?.let {
+            val builder: AlertDialog.Builder = AlertDialog.Builder(it)
+            val input = EditText(it)
+            input.hint = it.resources.getString(R.string.unlock_fly_zone_dialog_hint)
+            input.inputType = EditorInfo.TYPE_CLASS_NUMBER
+            builder.setView(input)
+            builder.setTitle(it.resources.getString(R.string.unlock_fly_zone_dialog_title))
+            builder.setItems(
+                it.resources.getStringArray(R.array.unlock_fly_zone_dialog_items)
+            ) { dialog, which -> // The 'which' argument contains the index position
+                // of the selected item
+                when (which) {
+                    0 -> if (TextUtils.isEmpty(input.text)) {
+                        dialog.dismiss()
+                    } else {
+                        val id = input.text.toString()
+                        mapViewController.addUnlockFlyZone(id.toInt())
+                    }
+                    1 -> if (TextUtils.isEmpty(input.text)) {
+                        dialog.dismiss()
+                    } else {
+                        val id = input.text.toString()
+                        mapViewController.addUnlockFlyZone(id.toInt())
+                        mapViewController.unlockFlyZones()
+                    }
+                    2 -> dialog.dismiss()
+                }
+            }
+            builder.show()
+        }
     }
     //endregion
 }

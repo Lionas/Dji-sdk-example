@@ -40,4 +40,13 @@
     <dimen name="txt_product_name_margin">24dp</dimen>
     <dimen name="panel_end_margin">16dp</dimen>
 
+    <!-- Fly Zone -->
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    <!-- left button list -->
+    <dimen name="left_button_list_button_width">150dp</dimen>
+    <dimen name="left_button_list_button_height">45dp</dimen>
+    <dimen name="left_button_list_button_text_size">14sp</dimen>
 </resources>

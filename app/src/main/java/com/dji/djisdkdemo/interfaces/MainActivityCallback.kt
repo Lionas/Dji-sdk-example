@@ -7,7 +7,7 @@ interface MainActivityCallback {
     fun setStatusMessage(message: String)
     fun requestPermissions(missingPermission: MutableList<String>)
     fun setProduct(name: String)
-    fun notifyStatusChange()
+    fun notifyStatusChange(isAircraftConnected: Boolean)
 
     //region map control
     fun updateDroneLocation(lat: Double, lng: Double)

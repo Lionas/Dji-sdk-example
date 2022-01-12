@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">DJISdkDemo</string>
     <string name="txt_product_default">(none)</string>
+
+    <!-- Fly Zone -->
+    <string name="geo_unlock_nfzs">Unlock NFZs</string>
+    <string name="geo_get_unlock_nfzs">Get Unlock NFZs</string>
+    <string name="geo_get_surrounding_nfz">Get Surr. NFZ</string>
+
+    <string name="unlock_fly_zone_dialog_hint">Enter Fly Zone ID</string>
+    <string name="unlock_fly_zone_dialog_title">Unlock Fly Zones</string>
+    <string-array name="unlock_fly_zone_dialog_items">
+        <item>Continue</item>
+        <item>Unlock</item>
+        <item>Cancel</item>
+    </string-array>
 </resources>

@@ -182,7 +182,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
 
     private fun notifyStatusChange() {
         initFlightController()
-        activityCallback.notifyStatusChange()
+        activityCallback.notifyStatusChange(isAircraftConnected())
     }
 
     private fun loginAccount(context: Context) {
@@ -202,6 +202,15 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
 
     private fun setProduct() {
         activityCallback.setProduct(djiSdkManager?.product?.model?.displayName ?: "(none)")
+    }
+
+    fun isAircraftConnected(): Boolean {
+        val product: BaseProduct? = DJISDKManager.getInstance().product
+        return if (product != null && product.isConnected) {
+            product is Aircraft
+        } else {
+            false
+        }
     }
 
     //region function for flight controller

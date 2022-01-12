@@ -5,4 +5,6 @@ package com.dji.djisdkdemo.interfaces
  */
 interface MainActivityViewControllerCallback {
     fun onMapClick()
+    fun showSurroundFlyZonesInTv(info: String)
+    fun showToast(msg: String)
 }
