@@ -9,12 +9,12 @@ import com.dji.djisdkdemo.interfaces.MainActivityCallback
 import com.dji.djisdkdemo.presenter.MainActivityPresenter
 import com.dji.djisdkdemo.ui.MainActivityViewController
 import dagger.hilt.android.AndroidEntryPoint
+import dji.sdk.products.Aircraft
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     companion object {
         const val TAG = "MainActivity"
-        const val FLAG_CONNECTION_CHANGE = "dji_sdk_connection_change"
         const val REQUEST_PERMISSION_CODE = 12345
         private var isAppStarted = false
 
@@ -47,8 +47,8 @@ class MainActivity : AppCompatActivity() {
             uiController.setTextViewProduct(name)
         }
 
-        override fun notifyStatusChange() {
-            uiController.notifyStatusChange()
+        override fun notifyStatusChange(product: Aircraft?) {
+            uiController.notifyStatusChange(product)
         }
 
         override fun updateDroneLocation(lat: Double, lng: Double) {

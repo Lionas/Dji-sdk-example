@@ -182,7 +182,15 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
 
     private fun notifyStatusChange() {
         initFlightController()
-        activityCallback.notifyStatusChange()
+
+        val product: BaseProduct? = DJISDKManager.getInstance().product
+        val returnValue =
+            if (product != null && product.isConnected && product is Aircraft) {
+                product
+            } else {
+                null
+            }
+        activityCallback.notifyStatusChange(returnValue)
     }
 
     private fun loginAccount(context: Context) {

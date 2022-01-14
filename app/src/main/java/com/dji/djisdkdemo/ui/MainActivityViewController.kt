@@ -1,20 +1,18 @@
 package com.dji.djisdkdemo.ui
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.activity.MainActivity
 import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
 import dji.common.airlink.PhysicalSource
 import dji.common.product.Model
@@ -36,7 +34,15 @@ import dji.ux.panel.CameraSettingAdvancedPanel
 import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import com.google.android.gms.maps.SupportMapFragment
+import dji.common.battery.SmartBatteryType
+import dji.common.battery.WarningRecord
+import dji.common.error.DJIError
+import dji.common.flightcontroller.LEDsSettings
+import dji.common.util.CommonCallbacks
+import dji.common.util.CommonCallbacks.CompletionCallback
+import dji.sdk.products.Aircraft
 import dji.ux.beta.core.widget.fpv.FPVWidget
+
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
@@ -77,7 +83,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private val mapViewController: MapViewController = MapViewController(weakActivityReference.get(), callback)
     //endregion
 
-    private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
+    private var secondaryFPVWidget: FPVWidget? = null
     private var systemStatusListPanelWidget: SystemStatusListPanelWidget? = null
     private var rtkWidget: RTKWidget? = null
     private var simulatorControlWidget: SimulatorControlWidget? = null
@@ -88,6 +94,10 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var cameraSettingExposurePanel: CameraSettingExposurePanel? = null
     private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
     //endregion
+
+    private var statusLeftTextView: TextView? = null
+    private var statusRightTopTextView: TextView? = null
+    private var statusRightBelowTextView: TextView? = null
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -110,14 +120,129 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
-    fun notifyStatusChange() {
-        handler.removeCallbacks(updateRunnable)
-        handler.postDelayed(updateRunnable, 500)
+    fun notifyStatusChange(product: Aircraft?) {
+        val stringBufferLeft = StringBuffer()
+        // 各種ステータスの表示
+
+        // バッテリータイプ
+        product?.battery?.getBatteryType(object :
+            CommonCallbacks.CompletionCallbackWith<SmartBatteryType> {
+            override fun onSuccess(batteryType: SmartBatteryType?) {
+                batteryType?.let {
+                    appendStrLine(stringBufferLeft, "Battery Type = ${it.name}")
+                    showStatusLeft(stringBufferLeft)
+                }
+            }
+
+            override fun onFailure(error: DJIError?) {
+                showFailure(error)
+            }
+        }
+        )
+
+        // バッテリーエラーの有無
+        product?.battery?.getLatestWarningRecord(object :
+            CommonCallbacks.CompletionCallbackWith<WarningRecord> {
+            override fun onSuccess(record: WarningRecord?) {
+                record?.let {
+                    appendStrLine(stringBufferLeft, "Battery has error? = ${it.hasError()}")
+                    showStatusLeft(stringBufferLeft)
+                }
+            }
+
+            override fun onFailure(error: DJIError?) {
+                showFailure(error)
+            }
+        })
+
+        // バッテリーがスマートバッテリーかどうか
+        val isSmartBattery = product?.battery?.isSmartBattery
+        appendStrLine(stringBufferLeft, "Smart battery = $isSmartBattery")
+        showStatusLeft(stringBufferLeft)
+
+        // 常時update
+        // バッテリーの状態
+        val sbRU = StringBuffer()
+        appendStrLine(sbRU, "<<<< Battery Status >>>>")
+        product?.battery?.let {
+            if (it.isConnected) {
+                it.setStateCallback { batteryState ->
+                    batteryState?.let { state ->
+                        appendStrLine(sbRU, "temperature = ${state.temperature} [℃]")
+                        appendStrLine(sbRU, "voltage = ${state.voltage} [V]")
+                        appendStrLine(sbRU, "charge Remaining = ${state.chargeRemaining} [mAh]")
+                        appendStrLine(
+                            sbRU,
+                            "charge Remaining = ${state.chargeRemainingInPercent} [%]"
+                        )
+                    }
+                }
+            } else {
+                appendStrLine(sbRU, "disconnect")
+            }
+        } ?: appendStrLine(sbRU, "not found")
+        showStatusRightTop(sbRU)
+
+        // LED OFF
+        val sbRB = StringBuffer()
+        appendStrLine(sbRB, "<<<< Flight Controller Status >>>>")
+        val ledSettings = LEDsSettings.Builder().frontLEDsOn(false).build()
+        product?.flightController?.setLEDsEnabledSettings(ledSettings) {
+            showFailure(it)
+        }
+
+        // Flight Controller Status
+        product?.flightController?.getLEDsEnabledSettings(object :
+            CommonCallbacks.CompletionCallbackWith<LEDsSettings> {
+                override fun onSuccess(ledSettings: LEDsSettings?) {
+                    ledSettings?.let {
+                        val onOff = if (it.areFrontLEDsOn()) "ON" else "OFF"
+                        appendStrLine(sbRB, "Front LED = $onOff")
+                        showStatusRightBottom(sbRB)
+                    }
+                }
+
+                override fun onFailure(error: DJIError?) {
+                    error?.let {
+                        showFailure(it)
+                    }
+                }
+            }
+        )
     }
 
-    private val updateRunnable = Runnable {
-        val intent = Intent(MainActivity.FLAG_CONNECTION_CHANGE)
-        weakActivityReference.get()?.sendBroadcast(intent)
+    private fun appendStrLine(sb: StringBuffer, add: String): StringBuffer {
+        return sb.append(add).append("\n")
+    }
+
+    private fun showStatusLeft(sb: StringBuffer) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                statusLeftTextView?.text = sb.toString()
+            }
+        }
+    }
+
+    private fun showStatusRightTop(sb: StringBuffer) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                statusRightTopTextView?.text = sb.toString()
+            }
+        }
+    }
+
+    private fun showStatusRightBottom(sb: StringBuffer) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                statusRightBelowTextView?.text = sb.toString()
+            }
+        }
+    }
+
+    private fun showFailure(error: DJIError?) {
+        error?.let {
+            showToastLong(it.description)
+        }
     }
 
     fun initUI(savedInstanceState: Bundle?) {
@@ -192,6 +317,10 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 hideOtherPanels(cameraSettingAdvancedPanel)
                 true
             }
+
+            statusLeftTextView = activity.findViewById(R.id.txt_status_left)
+            statusRightTopTextView = activity.findViewById(R.id.txt_status_right_top)
+            statusRightBelowTextView = activity.findViewById(R.id.txt_status_right_below)
         }
     }
 
@@ -447,4 +576,12 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         mapViewController.updateDroneLocation()
     }
     //endregion
+
+    fun showToastLong(msg: String) {
+        weakActivityReference.get()?.let {
+            it.runOnUiThread {
+                Toast.makeText(it, msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 }
