@@ -169,7 +169,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 it.setStateCallback { batteryState ->
                     batteryState?.let { state ->
                         appendStrLine(sbRU, "temperature = ${state.temperature} [℃]")
-                        appendStrLine(sbRU, "voltage = ${state.voltage} [V]")
+                        appendStrLine(sbRU, "voltage = ${state.voltage} [mV]")
                         appendStrLine(sbRU, "charge Remaining = ${state.chargeRemaining} [mAh]")
                         appendStrLine(
                             sbRU,
