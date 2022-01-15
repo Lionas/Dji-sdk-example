@@ -138,6 +138,8 @@ class MapViewController(
 
     fun clearMap() {
         gMap?.clear()
+        waypointMarkers.clear()
+
     }
     //endregion
 }

@@ -515,6 +515,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                 clearBtn = findViewById<View>(R.id.clear) as Button
                 clearBtn.setOnClickListener {
                     mapViewController.clearMap()
+                    wayPointMissionPresenter.clearWaypointMission()
                 }
                 configBtn = findViewById<View>(R.id.config) as Button
                 configBtn.setOnClickListener {

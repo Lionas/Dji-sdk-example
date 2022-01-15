@@ -33,7 +33,8 @@ class WayPointMissionPresenter {
     private var waypointMissionBuilder: WaypointMission.Builder? = null
     private var instance: WaypointMissionOperator? = null
 
-    private var finishedAction = WaypointMissionFinishedAction.NO_ACTION
+    private var finishedAction: WaypointMissionFinishedAction = 
+        WaypointMissionFinishedAction.NO_ACTION
     private var headingMode = WaypointMissionHeadingMode.AUTO
 
     fun setSpeed(spd: SPEED) {
@@ -70,13 +71,12 @@ class WayPointMissionPresenter {
                 .maxFlightSpeed(speed)
                 .flightPathMode(WaypointMissionFlightPathMode.NORMAL)
         } else {
-            waypointMissionBuilder?.apply {
-                finishedAction(finishedAction)
-                headingMode(headingMode)
-                autoFlightSpeed(speed)
-                maxFlightSpeed(speed)
-                flightPathMode(WaypointMissionFlightPathMode.NORMAL)
-            }
+            waypointMissionBuilder?.
+            finishedAction(finishedAction)?.
+            headingMode(headingMode)?.
+            autoFlightSpeed(speed)?.
+            maxFlightSpeed(speed)?.
+            flightPathMode(WaypointMissionFlightPathMode.NORMAL)
         }
         waypointMissionBuilder?.let {
             if (it.waypointList.size > 0) {
@@ -177,5 +177,9 @@ class WayPointMissionPresenter {
                 }
             }
         })
+    }
+
+    fun clearWaypointMission() {
+        waypointMissionBuilder = null
     }
 }
