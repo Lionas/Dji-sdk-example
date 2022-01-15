@@ -226,6 +226,8 @@
         android:layout_width="220dp"
         android:layout_height="50dp"
         android:layout_marginEnd="@dimen/dp_10_in_sw320dp"
+        app:uxsdk_messageTextEnabled="false"
+        app:uxsdk_stateTextEnabled="false"
         app:layout_constraintTop_toBottomOf="@+id/widget_remaining_flight_time"
         app:layout_constraintEnd_toEndOf="parent"
         />
