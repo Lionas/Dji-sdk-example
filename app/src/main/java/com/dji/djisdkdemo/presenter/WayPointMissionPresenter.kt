@@ -213,30 +213,36 @@ class WayPointMissionPresenter(private val callback: WayPointMissionPresenterCal
         // 最初のトリガー
         val trigger = WaypointReachedTrigger()
         trigger.waypointIndex = index // 指定の点についたら
-        trigger.setAction { // LEDをONにする
-            val ledSettings = LEDsSettings.Builder().frontLEDsOn(true).build()
-            val flightController = callback.getFlightController()
-            flightController?.setLEDsEnabledSettings(ledSettings) { error ->
-                error?.let {
-                    Log.e(TAG, "LED setting failed: ${it.description}")
-                } ?: Log.d(TAG, "LED ON.")
-            }
+        trigger.setAction {
+            // LEDをONにする
+            setLED(true)
             // 3秒待ってからLEDを消す
-            Handler(Looper.getMainLooper()).postDelayed({
-                val ledSet = LEDsSettings.Builder().frontLEDsOn(false).build()
-                flightController?.setLEDsEnabledSettings(ledSet) { error ->
-                    error?.let {
-                        Log.e(TAG, "LED setting failed: ${it.description}")
-                    } ?: Log.d(TAG, "LED OFF.")
-                }
-            }, 3000L)
+            Handler(Looper.getMainLooper()).postDelayed({ setLED(false) }, 3000L)
         }
+
+        // トリガーの挙動をリッスン
         trigger.addListener { _, event, error ->
             error?.let {
                 Log.d(TAG, "trigger error : ${error.description}")
             } ?: Log.d(TAG, "event = ${event?.name}")
         }
+
+        // トリガーを有効にする
         trigger.start()
         return trigger
+    }
+
+    // LEDのON/OFFを設定する
+    private fun setLED(onOff: Boolean) {
+        val ledSettings = LEDsSettings.Builder().frontLEDsOn(onOff).build()
+        val flightController = callback.getFlightController()
+        flightController?.setLEDsEnabledSettings(ledSettings) { error ->
+            error?.let {
+                Log.e(TAG, "LED setting failed: ${it.description}")
+            } ?: run {
+                val state = if (onOff) "ON" else "OFF"
+                Log.d(TAG, "LED $state.")
+            }
+        }
     }
 }
