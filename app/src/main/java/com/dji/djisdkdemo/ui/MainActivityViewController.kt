@@ -16,7 +16,7 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.activity.MainActivity
-import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
+import com.dji.djisdkdemo.interfaces.MapViewControllerCallback
 import dji.common.airlink.PhysicalSource
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
@@ -45,11 +45,17 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.widget.NestedScrollView
+import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
+import com.dji.djisdkdemo.interfaces.WayPointMissionPresenterCallback
 import com.dji.djisdkdemo.presenter.WayPointMissionPresenter
 import com.google.android.gms.maps.model.LatLng
 import dji.common.mission.waypoint.WaypointMissionFinishedAction
+import dji.sdk.flightcontroller.FlightController
 
-class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
+class MainActivityViewController(
+    appCompatActivity: AppCompatActivity,
+    private val mainActivityViewControllerCallback: MainActivityViewControllerCallback
+) : LifecycleEventObserver {
     companion object {
         const val TAG = "MainActivityViewController"
     }
@@ -81,7 +87,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var mapFragment: SupportMapFragment? = null
 
     // callback from map view controller
-    private val callback = object: MainActivityViewControllerCallback {
+    private val mapViewControllerCallback = object: MapViewControllerCallback {
         override fun onMapClick() {
             onViewClick(mapFragmentContainerView)
         }
@@ -93,7 +99,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     }
 
     private val mapViewController: MapViewController =
-        MapViewController(weakActivityReference.get(), callback)
+        MapViewController(weakActivityReference.get(), mapViewControllerCallback)
     //endregion
 
     private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
@@ -495,7 +501,13 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     }
 
     private fun onCreateWayPoint() {
-        wayPointMissionPresenter = WayPointMissionPresenter()
+        // callback from WayPointMissionPresenter
+        val cb = object: WayPointMissionPresenterCallback {
+            override fun getFlightController(): FlightController? {
+                return mainActivityViewControllerCallback.getFlightController()
+            }
+        }
+        wayPointMissionPresenter = WayPointMissionPresenter(cb)
         wayPointMissionPresenter.addListener()
     }
 

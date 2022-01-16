@@ -1,22 +1,23 @@
 package com.dji.djisdkdemo.presenter
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import com.dji.djisdkdemo.interfaces.WayPointMissionPresenterCallback
 import com.google.android.gms.maps.model.LatLng
-import dji.common.mission.waypoint.Waypoint
-import dji.common.mission.waypoint.WaypointMission
-import dji.common.mission.waypoint.WaypointMissionFinishedAction
-import dji.common.mission.waypoint.WaypointMissionHeadingMode
-import dji.common.mission.waypoint.WaypointMissionFlightPathMode
 import dji.common.error.DJIError
-import dji.common.mission.waypoint.WaypointMissionExecutionEvent
-import dji.common.mission.waypoint.WaypointMissionUploadEvent
-import dji.common.mission.waypoint.WaypointMissionDownloadEvent
+import dji.common.flightcontroller.LEDsSettings
+import dji.common.mission.waypoint.*
 import dji.common.util.CommonCallbacks
+import dji.sdk.mission.timeline.TimelineMission
+import dji.sdk.mission.timeline.triggers.Trigger
+import dji.sdk.mission.timeline.triggers.TriggerEvent
+import dji.sdk.mission.timeline.triggers.WaypointReachedTrigger
 import dji.sdk.mission.waypoint.WaypointMissionOperator
 import dji.sdk.sdkmanager.DJISDKManager
 import dji.sdk.mission.waypoint.WaypointMissionOperatorListener
 
-class WayPointMissionPresenter {
+class WayPointMissionPresenter(private val callback: WayPointMissionPresenterCallback) {
     companion object {
         const val TAG = "WayPointMissionPresenter"
     }
@@ -36,6 +37,10 @@ class WayPointMissionPresenter {
     private var finishedAction: WaypointMissionFinishedAction = 
         WaypointMissionFinishedAction.NO_ACTION
     private var headingMode = WaypointMissionHeadingMode.AUTO
+
+    //region timeline
+    private lateinit var fixedWaypointMission: WaypointMission
+    //endregion
 
     fun setSpeed(spd: SPEED) {
         speed = spd.value
@@ -85,9 +90,14 @@ class WayPointMissionPresenter {
                 }
                 Log.d(TAG, "Set Waypoint attitude successfully")
             }
+            fixedWaypointMission = it.build()
+
+            // Set trigger
+            setWaypointTrigger()
 
             // Waypoint Load Mission
-            val error = getWaypointMissionOperator()?.loadMission(it.build())
+            val error = getWaypointMissionOperator()?.loadMission(fixedWaypointMission)
+
             error?.let { err ->
                 Log.d(TAG, "loadWaypoint failed " + err.description)
             } ?: Log.d(TAG, "loadWaypoint succeeded")
@@ -131,6 +141,10 @@ class WayPointMissionPresenter {
 
     fun addWaypoint(latLng: LatLng) {
         val waypoint = Waypoint(latLng.latitude, latLng.longitude, altitude)
+
+        // 各ウェイポイントで10秒待機する
+        waypoint.addAction(WaypointAction(WaypointActionType.STAY, 10000))
+
         waypointMissionBuilder?.addWaypoint(waypoint) ?: run {
             waypointMissionBuilder = WaypointMission.Builder().addWaypoint(waypoint)
             waypointMissionBuilder?.build()
@@ -181,5 +195,48 @@ class WayPointMissionPresenter {
 
     fun clearWaypointMission() {
         waypointMissionBuilder = null
+    }
+
+    // ウェイポイントで任意のアクションを行う
+    private fun setWaypointTrigger() {
+        val timelineElement = TimelineMission.elementFromWaypointMission(fixedWaypointMission)
+        val triggers = mutableListOf<Trigger>()
+
+        // 最初のトリガー
+        val trigger = createDroppingTrigger(0)
+        triggers.add(trigger)
+
+        timelineElement.triggers = triggers
+    }
+
+    private fun createDroppingTrigger(index: Int): Trigger {
+        // 最初のトリガー
+        val trigger = WaypointReachedTrigger()
+        trigger.waypointIndex = index // 指定の点についたら
+        trigger.setAction { // LEDをONにする
+            val ledSettings = LEDsSettings.Builder().frontLEDsOn(true).build()
+            val flightController = callback.getFlightController()
+            flightController?.setLEDsEnabledSettings(ledSettings) { error ->
+                error?.let {
+                    Log.e(TAG, "LED setting failed: ${it.description}")
+                } ?: Log.d(TAG, "LED ON.")
+            }
+            // 3秒待ってからLEDを消す
+            Handler(Looper.getMainLooper()).postDelayed({
+                val ledSet = LEDsSettings.Builder().frontLEDsOn(false).build()
+                flightController?.setLEDsEnabledSettings(ledSet) { error ->
+                    error?.let {
+                        Log.e(TAG, "LED setting failed: ${it.description}")
+                    } ?: Log.d(TAG, "LED OFF.")
+                }
+            }, 3000L)
+        }
+        trigger.addListener { _, event, error ->
+            error?.let {
+                Log.d(TAG, "trigger error : ${error.description}")
+            } ?: Log.d(TAG, "event = ${event?.name}")
+        }
+        trigger.start()
+        return trigger
     }
 }

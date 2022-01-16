@@ -1,9 +1,11 @@
 package com.dji.djisdkdemo.interfaces
 
+import dji.sdk.flightcontroller.FlightController
+
 /**
  * MainActivityPresenterからMainActivityの処理を呼び出すインタフェース
  */
-interface MainActivityCallback {
+interface MainActivityPresenterCallback {
     fun setStatusMessage(message: String)
     fun requestPermissions(missingPermission: MutableList<String>)
     fun setProduct(name: String)

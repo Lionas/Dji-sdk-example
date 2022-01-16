@@ -6,7 +6,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.dji.djisdkdemo.activity.MainActivity
-import com.dji.djisdkdemo.interfaces.MainActivityCallback
+import com.dji.djisdkdemo.interfaces.MainActivityPresenterCallback
 import dji.common.error.DJIError
 import dji.common.error.DJISDKError
 import dji.sdk.base.BaseComponent
@@ -23,7 +23,7 @@ import dji.sdk.useraccount.UserAccountManager
 import dji.sdk.flightcontroller.FlightController
 import dji.sdk.products.Aircraft
 
-class MainActivityPresenter(private val activityCallback: MainActivityCallback) {
+class MainActivityPresenter(private val activityCallback: MainActivityPresenterCallback) {
     companion object {
         const val TAG = "MainActivityPresenter"
         val REQUIRED_PERMISSION_LIST = arrayOf(
@@ -225,6 +225,12 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                 activityCallback.updateDroneLocation(lat, lng)
             }
         }
+    }
+    //endregion
+
+    //region timeline
+    fun getFlightController(): FlightController? {
+        return flightController
     }
     //endregion
 }

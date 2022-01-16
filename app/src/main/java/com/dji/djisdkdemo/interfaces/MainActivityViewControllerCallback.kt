@@ -1,11 +1,10 @@
 package com.dji.djisdkdemo.interfaces
 
-import com.google.android.gms.maps.model.LatLng
+import dji.sdk.flightcontroller.FlightController
 
 /**
- * MapViewControllerからMainActivityViewControllerの処理を呼び出すインタフェース
+ * MainActivityViewControllerからMainActivityの処理を呼び出すインタフェース
  */
 interface MainActivityViewControllerCallback {
-    fun onMapClick()
-    fun addWaypoint(latLng: LatLng)
+    fun getFlightController(): FlightController?
 }

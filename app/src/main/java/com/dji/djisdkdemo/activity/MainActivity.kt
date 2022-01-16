@@ -5,10 +5,13 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import androidx.core.app.ActivityCompat
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.interfaces.MainActivityCallback
+import com.dji.djisdkdemo.interfaces.MainActivityPresenterCallback
+import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
+import com.dji.djisdkdemo.interfaces.WayPointMissionPresenterCallback
 import com.dji.djisdkdemo.presenter.MainActivityPresenter
 import com.dji.djisdkdemo.ui.MainActivityViewController
 import dagger.hilt.android.AndroidEntryPoint
+import dji.sdk.flightcontroller.FlightController
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -30,7 +33,7 @@ class MainActivity : AppCompatActivity() {
 
 
     // call from presenter
-    private val callback = object: MainActivityCallback {
+    private val callback = object: MainActivityPresenterCallback {
         override fun setStatusMessage(message: String) {
             uiController.setTextViewStatusMessage(message)
         }
@@ -61,8 +64,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val presenter = MainActivityPresenter(callback)
+
+    private val uiControllerCallback = object: MainActivityViewControllerCallback {
+        override fun getFlightController(): FlightController? {
+            return presenter.getFlightController()
+        }
+    }
     private val uiController: MainActivityViewController =
-        MainActivityViewController(this)
+        MainActivityViewController(this, uiControllerCallback)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
