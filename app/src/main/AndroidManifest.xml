@@ -56,24 +56,24 @@
             android:value="423f56cc81b62fb3539d2f19" />
 
         <!-- Here Maps -->
-        <meta-data
-            android:name="com.here.android.maps.appid"
-            android:value="@string/dji_ux_sample_here_maps_id" />
-        <meta-data
-            android:name="com.here.android.maps.apptoken"
-            android:value="@string/dji_ux_sample_here_maps_app_token" />
-        <meta-data
-            android:name="com.here.android.maps.license.key"
-            android:value="@string/dji_ux_sample_here_maps_license_key" />
+<!--        <meta-data-->
+<!--            android:name="com.here.android.maps.appid"-->
+<!--            android:value="@string/dji_ux_sample_here_maps_id" />-->
+<!--        <meta-data-->
+<!--            android:name="com.here.android.maps.apptoken"-->
+<!--            android:value="@string/dji_ux_sample_here_maps_app_token" />-->
+<!--        <meta-data-->
+<!--            android:name="com.here.android.maps.license.key"-->
+<!--            android:value="@string/dji_ux_sample_here_maps_license_key" />-->
 
-        <service
-            android:name="com.here.android.mpa.service.MapService"
-            android:label="HereMapService">
-            <intent-filter>
-                <!--Note, action name should not be changed.-->
-                <action android:name="com.here.android.mpa.service.MapService.v3" />
-            </intent-filter>
-        </service>
+<!--        <service-->
+<!--            android:name="com.here.android.mpa.service.MapService"-->
+<!--            android:label="HereMapService">-->
+<!--            <intent-filter>-->
+<!--                &lt;!&ndash;Note, action name should not be changed.&ndash;&gt;-->
+<!--                <action android:name="com.here.android.mpa.service.MapService.v3" />-->
+<!--            </intent-filter>-->
+<!--        </service>-->
 
         <!-- Google Maps -->
         <meta-data

@@ -108,7 +108,8 @@ dependencies {
     implementation 'com.amap.api:search:6.9.2'
     implementation 'com.amap.api:location:4.7.0'
     // HERE maps
-    implementation files('libs/HERE-sdk-3.15.0.aar')
+//    TODO 使わないならコメントアウトする
+//    implementation files('libs/HERE-sdk-3.15.0.aar')
     // Mapbox
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.2.0'
     // Google maps
