@@ -84,3 +84,7 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/codeStyles/Project.xml
