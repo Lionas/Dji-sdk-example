@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">DJISdkDemo</string>
     <string name="txt_product_default">(none)</string>
+
+    <!-- TapFly -->
+    <string name="push_info">Push Info</string>
+    <string name="go">Go</string>
+    <string name="horizontal_avoidance">水平障害物回避有効</string>
+    <string name="speed">スピード</string>
 </resources>
