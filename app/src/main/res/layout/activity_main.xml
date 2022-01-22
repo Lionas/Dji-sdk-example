@@ -7,6 +7,18 @@
     android:layout_height="match_parent"
     tools:context=".activity.MainActivity">
 
+    <ImageButton
+        android:id="@+id/pointing_drawer_control_ib"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginTop="100dp"
+        android:src="@drawable/mission_other_icon"
+        android:background="#ff000000"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        />
+
 <!--    <dji.ux.beta.core.widget.fpv.FPVWidget-->
 <!--        android:id="@+id/widget_fpv"-->
 <!--        android:layout_width="match_parent"-->
@@ -48,6 +60,18 @@
 <!--        android:layout_height="match_parent"-->
 <!--        app:layout_constraintBottom_toBottomOf="parent"-->
 <!--        app:layout_constraintEnd_toEndOf="parent" />-->
+
+    <TextureView
+        android:id="@+id/video_previewer_surface"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center"
+        app:layout_constraintTop_toBottomOf="@+id/panel_top_bar"
+        app:layout_constraintBottom_toTopOf="@+id/txt_status_message"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
     <dji.ux.beta.core.widget.radar.RadarWidget
         android:id="@+id/widget_radar"
@@ -282,7 +306,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:ignore="RtlHardcoded"
-        tools:visibility="visible"
+        tools:visibility="gone"
         />
 
     <dji.ux.panel.CameraSettingAdvancedPanel
@@ -298,7 +322,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:ignore="RtlHardcoded"
-        tools:visibility="visible"
+        tools:visibility="gone"
         />
 
     <!-- カスタムここまで -->
@@ -400,5 +424,149 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="0.95"
         app:uxsdk_titleBarBackgroundColor="@color/uxsdk_black" />
+
+    <!-- TODO deprecatedなSlidingDrawerを使うのはあまり良くないが、サンプルなのでこれを利用する -->
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/panel_top_bar"
+        app:layout_constraintBottom_toTopOf="@+id/txt_status_message"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+
+        <!-- TapFly Information -->
+        <SlidingDrawer
+            android:id="@+id/pointing_drawer_sd"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:content="@+id/pointing_drawer_content_rl"
+            android:handle="@+id/pointing_handle"
+            >
+
+            <ImageView
+                android:id="@id/pointing_handle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="ContentDescription" />
+
+            <RelativeLayout
+                android:id="@id/pointing_drawer_content_rl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                >
+
+                <ScrollView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="false"
+                    android:scrollbars="vertical">
+
+                    <TextView
+                        android:id="@+id/pointing_push_tv"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="vertical"
+                        android:text="@string/push_info" />
+                </ScrollView>
+            </RelativeLayout>
+        </SlidingDrawer>
+    </RelativeLayout>
+
+    <!-- TapFlyControlUI -->
+    <RelativeLayout
+        android:id="@+id/pointing_bg_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@+id/panel_top_bar"
+        app:layout_constraintBottom_toTopOf="@+id/txt_status_message"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        >
+
+        <Button
+            android:id="@+id/pointing_start_btn"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/pointing_start"
+            android:text="@string/go"
+            android:textSize="24sp"
+            android:visibility="invisible"
+            tools:visibility="visible" />
+
+        <ImageView
+            android:id="@+id/pointing_rst_point_iv"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/visual_point_now"
+            android:visibility="invisible"
+            tools:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/pointing_stop_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_margin="10dp"
+            android:background="#00000000"
+            android:scaleType="fitXY"
+            android:src="@drawable/mission_stop"
+            android:visibility="invisible"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/pointing_assistant_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_above="@+id/pointing_speed_sb"
+            android:layout_alignBaseline="@+id/pointing_assistant_sw"
+            android:layout_alignStart="@+id/textView"
+            android:text="@string/horizontal_avoidance" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/pointing_assistant_sw"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/pointing_speed_sb"
+            android:layout_toEndOf="@+id/pointing_assistant_tv"
+            android:checked="true"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toStartOf="@id/pointing_speed_sb"
+
+            android:text="@string/speed"
+            android:layout_marginBottom="30dp"
+            android:textSize="16sp" />
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:id="@+id/pointing_speed_sb"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_toStartOf="@+id/pointing_speed_tv"
+            android:layout_marginBottom="30dp"
+            android:max="9"
+            android:progress="1" />
+
+        <TextView
+            android:id="@+id/pointing_speed_tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="30dp"
+            android:text="1"
+            android:textSize="16sp" />
+
+    </RelativeLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
