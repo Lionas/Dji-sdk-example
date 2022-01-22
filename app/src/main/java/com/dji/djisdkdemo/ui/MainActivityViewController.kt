@@ -61,8 +61,8 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private lateinit var topBarPanelWidget: TopBarPanelWidget
     private var parentView: ConstraintLayout? = null
     private var radarWidget: RadarWidget? = null
-    private var fpvWidget: FPVWidget? = null
-    private var fpvInteractionWidget: FPVInteractionWidget? = null
+//    private var fpvWidget: FPVWidget? = null
+//    private var fpvInteractionWidget: FPVInteractionWidget? = null
 
     //region map
     //    private var mapWidget: MapWidget? = null
@@ -77,7 +77,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private val mapViewController: MapViewController = MapViewController(weakActivityReference.get(), callback)
     //endregion
 
-    private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
+//    private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
     private var systemStatusListPanelWidget: SystemStatusListPanelWidget? = null
     private var rtkWidget: RTKWidget? = null
     private var simulatorControlWidget: SimulatorControlWidget? = null
@@ -117,16 +117,16 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     fun initUI(savedInstanceState: Bundle?) {
         weakActivityReference.get()?.let { activity ->
             radarWidget = activity.findViewById(R.id.widget_radar)
-            fpvWidget = activity.findViewById(R.id.widget_fpv)
-            fpvWidget?.setOnClickListener {
-                onViewClick(fpvWidget)
-            }
-            fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
+//            fpvWidget = activity.findViewById(R.id.widget_fpv)
+//            fpvWidget?.setOnClickListener {
+//                onViewClick(fpvWidget)
+//            }
+//            fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
             mapFragmentContainerView = activity.findViewById(R.id.widget_map)
-            secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
-            secondaryFPVWidget?.setOnClickListener {
-                swapVideoSource()
-            }
+//            secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
+//            secondaryFPVWidget?.setOnClickListener {
+//                swapVideoSource()
+//            }
             systemStatusListPanelWidget = activity.findViewById(R.id.widget_panel_system_status_list)
             rtkWidget = activity.findViewById(R.id.widget_rtk)
             simulatorControlWidget = activity.findViewById(R.id.widget_simulator_control)
@@ -195,16 +195,16 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
     private fun onResumeProcess() {
         compositeDisposable = CompositeDisposable()
-        secondaryFPVWidget?.let {
-            compositeDisposable?.add(
-                it.cameraName
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { cameraName: String? ->
-                        cameraName?.let {
-                            this.updateSecondaryVideoVisibility(it)
-                        }
-                    })
-        }
+//        secondaryFPVWidget?.let {
+//            compositeDisposable?.add(
+//                it.cameraName
+//                    .observeOn(AndroidSchedulers.mainThread())
+//                    .subscribe { cameraName: String? ->
+//                        cameraName?.let {
+//                            this.updateSecondaryVideoVisibility(it)
+//                        }
+//                    })
+//        }
         systemStatusListPanelWidget?.let {
             compositeDisposable?.add(
                 it.closeButtonPressed()
@@ -258,31 +258,31 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
-    /**
-     * Hide the secondary FPV widget when there is no secondary camera.
-     *
-     * @param cameraName The name of the secondary camera.
-     */
-    private fun updateSecondaryVideoVisibility(cameraName: String) {
-        if (cameraName == PhysicalSource.UNKNOWN.name) {
-            secondaryFPVWidget?.visibility = View.GONE
-        } else {
-            secondaryFPVWidget?.visibility = View.VISIBLE
-        }
-    }
-
-    /**
-     * Swap the video sources of the FPV and secondary FPV widgets.
-     */
-    private fun swapVideoSource() {
-        if (secondaryFPVWidget?.videoSource == SettingDefinitions.VideoSource.SECONDARY) {
-            fpvWidget?.videoSource = SettingDefinitions.VideoSource.SECONDARY
-            secondaryFPVWidget?.videoSource = SettingDefinitions.VideoSource.PRIMARY
-        } else {
-            fpvWidget?.videoSource = SettingDefinitions.VideoSource.PRIMARY
-            secondaryFPVWidget?.videoSource = SettingDefinitions.VideoSource.SECONDARY
-        }
-    }
+//    /**
+//     * Hide the secondary FPV widget when there is no secondary camera.
+//     *
+//     * @param cameraName The name of the secondary camera.
+//     */
+//    private fun updateSecondaryVideoVisibility(cameraName: String) {
+//        if (cameraName == PhysicalSource.UNKNOWN.name) {
+//            secondaryFPVWidget?.visibility = View.GONE
+//        } else {
+//            secondaryFPVWidget?.visibility = View.VISIBLE
+//        }
+//    }
+//
+//    /**
+//     * Swap the video sources of the FPV and secondary FPV widgets.
+//     */
+//    private fun swapVideoSource() {
+//        if (secondaryFPVWidget?.videoSource == SettingDefinitions.VideoSource.SECONDARY) {
+//            fpvWidget?.videoSource = SettingDefinitions.VideoSource.SECONDARY
+//            secondaryFPVWidget?.videoSource = SettingDefinitions.VideoSource.PRIMARY
+//        } else {
+//            fpvWidget?.videoSource = SettingDefinitions.VideoSource.PRIMARY
+//            secondaryFPVWidget?.videoSource = SettingDefinitions.VideoSource.SECONDARY
+//        }
+//    }
 
     //region Utils
     private fun hideOtherPanels(widget: View?) {
@@ -318,36 +318,36 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
      * @param view The thumbnail view that was clicked.
      */
     private fun onViewClick(view: View?) {
-        if (view === fpvWidget && !isMapMini) {
-            parentView?.let {
-                //reorder widgets
-                it.removeView(fpvWidget)
-                it.addView(fpvWidget, 0)
-                //resize widgets
-                resizeViews(fpvWidget, mapFragmentContainerView)
-                //enable interaction on FPV
-                fpvInteractionWidget?.isInteractionEnabled = true
-                //disable user login widget on map
-                userAccountLoginWidget?.visibility = View.GONE
-                isMapMini = true
-
-                // update(move) map position
-                mapViewController.cameraUpdate()
-            }
-        } else if (view === mapFragmentContainerView && isMapMini) {
-            parentView?.let {
-                // reorder widgets
-                it.removeView(fpvWidget)
-                it.addView(fpvWidget, it.indexOfChild(mapFragmentContainerView) + 1)
-                //resize widgets
-                resizeViews(mapFragmentContainerView, fpvWidget)
-                //disable interaction on FPV
-                fpvInteractionWidget?.isInteractionEnabled = false
-                //enable user login widget on map
-                userAccountLoginWidget?.visibility = View.VISIBLE
-                isMapMini = false
-            }
-        }
+//        if (view === fpvWidget && !isMapMini) {
+//            parentView?.let {
+//                //reorder widgets
+//                it.removeView(fpvWidget)
+//                it.addView(fpvWidget, 0)
+//                //resize widgets
+//                resizeViews(fpvWidget, mapFragmentContainerView)
+//                //enable interaction on FPV
+//                fpvInteractionWidget?.isInteractionEnabled = true
+//                //disable user login widget on map
+//                userAccountLoginWidget?.visibility = View.GONE
+//                isMapMini = true
+//
+//                // update(move) map position
+//                mapViewController.cameraUpdate()
+//            }
+//        } else if (view === mapFragmentContainerView && isMapMini) {
+//            parentView?.let {
+//                // reorder widgets
+//                it.removeView(fpvWidget)
+//                it.addView(fpvWidget, it.indexOfChild(mapFragmentContainerView) + 1)
+//                //resize widgets
+//                resizeViews(mapFragmentContainerView, fpvWidget)
+//                //disable interaction on FPV
+//                fpvInteractionWidget?.isInteractionEnabled = false
+//                //enable user login widget on map
+//                userAccountLoginWidget?.visibility = View.VISIBLE
+//                isMapMini = false
+//            }
+//        }
     }
 
     /**
