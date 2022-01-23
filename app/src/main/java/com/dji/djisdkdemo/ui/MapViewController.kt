@@ -2,7 +2,7 @@ package com.dji.djisdkdemo.ui
 
 import androidx.appcompat.app.AppCompatActivity
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
+import com.dji.djisdkdemo.interfaces.MapViewControllerCallback
 import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference
 
 class MapViewController(
     appCompatActivity: AppCompatActivity?,
-    private val callback: MainActivityViewControllerCallback
+    private val callback: MapViewControllerCallback
 ) :
     OnMapReadyCallback,
     GoogleMap.OnMapClickListener
