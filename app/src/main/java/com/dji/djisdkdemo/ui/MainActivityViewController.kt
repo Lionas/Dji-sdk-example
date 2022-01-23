@@ -1,10 +1,9 @@
 package com.dji.djisdkdemo.ui
 
-import android.content.Intent
+import android.graphics.SurfaceTexture
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
@@ -14,21 +13,18 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.activity.MainActivity
-import com.dji.djisdkdemo.interfaces.MainActivityViewControllerCallback
-import dji.common.airlink.PhysicalSource
+import com.dji.djisdkdemo.interfaces.MapViewControllerCallback
+import com.dji.djisdkdemo.interfaces.TapFlyMissionViewControllerCallback
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
 import dji.thirdparty.io.reactivex.disposables.CompositeDisposable
 import dji.ux.beta.accessory.widget.rtk.RTKWidget
 import dji.ux.beta.cameracore.widget.cameracontrols.CameraControlsWidget
 import dji.ux.beta.cameracore.widget.cameracontrols.camerasettingsindicator.CameraSettingsMenuIndicatorWidget
-import dji.ux.beta.cameracore.widget.fpvinteraction.FPVInteractionWidget
 import dji.ux.beta.core.extension.hide
 import dji.ux.beta.core.extension.toggleVisibility
 import dji.ux.beta.core.panel.systemstatus.SystemStatusListPanelWidget
 import dji.ux.beta.core.panel.topbar.TopBarPanelWidget
-import dji.ux.beta.core.util.SettingDefinitions
 import dji.ux.beta.core.widget.radar.RadarWidget
 import dji.ux.beta.core.widget.useraccount.UserAccountLoginWidget
 import dji.ux.beta.training.widget.simulatorcontrol.SimulatorControlWidget
@@ -36,7 +32,14 @@ import dji.ux.panel.CameraSettingAdvancedPanel
 import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import com.google.android.gms.maps.SupportMapFragment
-import dji.ux.beta.core.widget.fpv.FPVWidget
+import android.widget.Toast
+import dji.sdk.codec.DJICodecManager
+
+import dji.sdk.camera.VideoFeeder
+import dji.sdk.camera.VideoFeeder.VideoDataListener
+import android.view.TextureView
+import dji.sdk.camera.Camera
+
 
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
@@ -47,6 +50,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     // for custom UI
     private lateinit var txtStatusMessage: TextView
     private lateinit var txtProduct: TextView
+    private lateinit var videoSurface: TextureView
 
     // for UXSDK Beta v0.5.1
     private var isMapMini = true
@@ -69,12 +73,13 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var mapFragmentContainerView: FragmentContainerView? = null
     private var mapFragment: SupportMapFragment? = null
     // callback from map controller
-    private val callback = object: MainActivityViewControllerCallback {
-        override fun onMapClick() {
-            onViewClick(mapFragmentContainerView)
-        }
-    }
-    private val mapViewController: MapViewController = MapViewController(weakActivityReference.get(), callback)
+//    private val mapViewControllerController = object: MapViewControllerCallback {
+//        override fun onMapClick() {
+//            onViewClick(mapFragmentContainerView)
+//        }
+//    }
+//    private val mapViewController: MapViewController =
+//        MapViewController(weakActivityReference.get(), mapViewControllerController)
     //endregion
 
 //    private var secondaryFPVWidget: dji.ux.beta.core.widget.fpv.FPVWidget? = null
@@ -89,12 +94,35 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
     //endregion
 
+    //region for TapFlyMission
+    private val tapFlyMissionViewControllerCallback = object : TapFlyMissionViewControllerCallback{
+        override fun setResultToToast(message: String) {
+            showToast(message)
+        }
+    }
+    private val tapFlyViewController =
+            TapFlyMissionViewController(appCompatActivity, tapFlyMissionViewControllerCallback)
+    //endregion
+
+    //region for video surface
+    private var receivedVideoDataListener: VideoDataListener? = null
+    private var codecManager: DJICodecManager? = null
+    //endregion
+
     private val handler = Handler(Looper.getMainLooper())
+    private var model: Model? = null
 
     private fun initCustomUI() {
         weakActivityReference.get()?.let { activity ->
             txtStatusMessage = activity.findViewById(R.id.txt_status_message)
             txtProduct = activity.findViewById(R.id.txt_product)
+
+            // VideoSurface
+            initVideoSurface(activity)
+            initReceivedVideoDataListener()
+
+            // TapFly
+            tapFlyViewController.initUI()
         }
     }
 
@@ -104,14 +132,23 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
-    fun setTextViewProduct(name: String) {
+    fun setProductModel(model: Model?) {
+        this.model = model
         handler.post {
-            txtProduct.text = name
+            txtProduct.text = model?.displayName ?: "(none)"
         }
     }
 
     fun notifyStatusChange() {
-        //TODO
+        initPreviewer()
+    }
+
+    private fun showToast(message: String) {
+        weakActivityReference.get().let { appCompatActivity ->
+            appCompatActivity?.runOnUiThread {
+                Toast.makeText(appCompatActivity, message, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     fun initUI(savedInstanceState: Bundle?) {
@@ -122,7 +159,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 //                onViewClick(fpvWidget)
 //            }
 //            fpvInteractionWidget = activity.findViewById(R.id.widget_fpv_interaction)
-            mapFragmentContainerView = activity.findViewById(R.id.widget_map)
+//            mapFragmentContainerView = activity.findViewById(R.id.widget_map)
 //            secondaryFPVWidget = activity.findViewById(R.id.widget_secondary_fpv)
 //            secondaryFPVWidget?.setOnClickListener {
 //                swapVideoSource()
@@ -143,10 +180,10 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
             setM200SeriesWarningLevelRanges()
 
-            mapFragmentContainerView?.let {
-                mapFragment = activity.supportFragmentManager.findFragmentById(R.id.widget_map) as SupportMapFragment
-                mapFragment?.getMapAsync(mapViewController)
-            }
+//            mapFragmentContainerView?.let {
+//                mapFragment = activity.supportFragmentManager.findFragmentById(R.id.widget_map) as SupportMapFragment
+//                mapFragment?.getMapAsync(mapViewController)
+//            }
 
             userAccountLoginWidget?.visibility = View.GONE
 
@@ -189,7 +226,42 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
+    private fun initVideoSurface(activity: AppCompatActivity) {
+        videoSurface = activity.findViewById(R.id.video_previewer_surface)
+        videoSurface.surfaceTextureListener = object : TextureView.SurfaceTextureListener{
+            override fun onSurfaceTextureAvailable(
+                surface: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) {
+                if (codecManager == null) {
+                    codecManager = DJICodecManager(activity, surface, width, height)
+                }
+            }
+
+            override fun onSurfaceTextureSizeChanged(
+                surface: SurfaceTexture,
+                width: Int,
+                height: Int
+            ) = Unit
+
+            override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
+                codecManager?.cleanSurface()
+                return false
+            }
+
+            override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
+        }
+    }
+
+    private fun initReceivedVideoDataListener() {
+        receivedVideoDataListener = VideoDataListener { videoBuffer, size ->
+            codecManager?.sendDataToDecoder(videoBuffer, size)
+        }
+    }
+
     private fun onCreateProcess() {
+        weakActivityReference.get()?.lifecycle?.addObserver(tapFlyViewController)
         initCustomUI()
     }
 
@@ -241,6 +313,25 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
                     }
             )
         }
+
+        initPreviewer()
+    }
+
+    private fun initPreviewer() {
+        weakActivityReference.get()?.let {
+            initVideoSurface(it)
+            if (model != Model.UNKNOWN_AIRCRAFT) {
+                receivedVideoDataListener?.let { listener ->
+                    VideoFeeder.getInstance()?.primaryVideoFeed?.addVideoDataListener(listener)
+                }
+            }
+        }
+    }
+
+    private fun resetPreviewer() {
+        receivedVideoDataListener?.let {
+            VideoFeeder.getInstance()?.primaryVideoFeed?.removeVideoDataListener(it)
+        }
     }
 
     fun onSaveInstanceState(outState: Bundle) {
@@ -256,6 +347,11 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             it.dispose()
             compositeDisposable = null
         }
+        resetPreviewer()
+    }
+
+    private fun onDestroyProcess() {
+        resetPreviewer()
     }
 
 //    /**
@@ -430,15 +526,17 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             }
             Lifecycle.Event.ON_START -> Unit
             Lifecycle.Event.ON_STOP -> Unit
-            Lifecycle.Event.ON_DESTROY -> Unit
+            Lifecycle.Event.ON_DESTROY -> {
+                onDestroyProcess()
+            }
             Lifecycle.Event.ON_ANY -> Unit
         }
     }
 
     //region MapController
     fun updateDroneLocation(lat: Double, lng: Double) {
-        mapViewController.setDroneLocation(lat, lng)
-        mapViewController.updateDroneLocation()
+//        mapViewController.setDroneLocation(lat, lng)
+//        mapViewController.updateDroneLocation()
     }
     //endregion
 }
