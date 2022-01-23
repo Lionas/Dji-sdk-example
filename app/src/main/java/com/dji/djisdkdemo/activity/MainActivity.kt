@@ -5,10 +5,11 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import androidx.core.app.ActivityCompat
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.interfaces.MainActivityCallback
+import com.dji.djisdkdemo.interfaces.MainActivityPresenterCallback
 import com.dji.djisdkdemo.presenter.MainActivityPresenter
 import com.dji.djisdkdemo.ui.MainActivityViewController
 import dagger.hilt.android.AndroidEntryPoint
+import dji.common.product.Model
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -29,7 +30,7 @@ class MainActivity : AppCompatActivity() {
 
 
     // call from presenter
-    private val callback = object: MainActivityCallback {
+    private val callback = object: MainActivityPresenterCallback {
         override fun setStatusMessage(message: String) {
             uiController.setTextViewStatusMessage(message)
         }
@@ -42,8 +43,8 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        override fun setProduct(name: String) {
-            uiController.setTextViewProduct(name)
+        override fun setProductModel(model: Model?) {
+            uiController.setProductModel(model)
         }
 
         override fun notifyStatusChange() {
