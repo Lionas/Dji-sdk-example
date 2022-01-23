@@ -1,12 +1,14 @@
 package com.dji.djisdkdemo.interfaces
 
+import dji.common.product.Model
+
 /**
  * MainActivityPresenterからMainActivityの処理を呼び出すインタフェース
  */
-interface MainActivityCallback {
+interface MainActivityPresenterCallback {
     fun setStatusMessage(message: String)
     fun requestPermissions(missingPermission: MutableList<String>)
-    fun setProduct(name: String)
+    fun setProductModel(model: Model?)
     fun notifyStatusChange()
 
     //region map control
