@@ -124,8 +124,9 @@ class TapFlyMissionViewController(
         if (view == null) return null
         val parent = view.parent as View
 
-        // タップした位置が左上原点となるような中心点を算出
-        // 親ビューからタップしたビューまでの距離＋タップしたビューからの距離＋タップしたビューの半分先が中心点
+        // タップした位置がGoボタンの中心になる点を算出
+        // 親ビュー（レイアウト）の左の絶対位置＋親ビュー内でのタップした水平位置＋Goボタンの横幅の半分が
+        // 親ビュー内でのGoボタンの水平方向の中心の位置
         var centerX = view.left + view.x + view.width.toFloat() / 2
         var centerY = view.top + view.y + view.height.toFloat() / 2
         centerX = if (centerX < 0) 0f else centerX
