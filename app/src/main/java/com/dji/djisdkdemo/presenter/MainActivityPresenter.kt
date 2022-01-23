@@ -20,8 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import dji.common.useraccount.UserAccountState
 import dji.common.util.CommonCallbacks.CompletionCallbackWith
 import dji.sdk.useraccount.UserAccountManager
-import dji.sdk.flightcontroller.FlightController
-import dji.sdk.products.Aircraft
 
 class MainActivityPresenter(private val activityCallback: MainActivityPresenterCallback) {
     companion object {
@@ -49,10 +47,6 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
 
     private var lastProgress = -1
     private val scope = CoroutineScope(Dispatchers.Default)
-
-    //region definition for flight controller
-    private var flightController: FlightController? = null
-    //endregion
 
     fun checkAndRequestPermissions(context: Context) {
         // Check for permissions
@@ -181,7 +175,6 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
     }
 
     private fun notifyStatusChange() {
-        initFlightController()
         activityCallback.notifyStatusChange()
     }
 
@@ -203,22 +196,4 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
     private fun setProduct() {
         activityCallback.setProductModel(djiSdkManager?.product?.model)
     }
-
-    //region function for flight controller
-    private fun initFlightController() {
-        val product: BaseProduct? = DJISDKManager.getInstance().product
-        if (product != null && product.isConnected) {
-            if (product is Aircraft) {
-                flightController = product.flightController
-            }
-        }
-        flightController?.let {
-            it.setStateCallback { djiFlightControllerCurrentState ->
-                val lat = djiFlightControllerCurrentState.aircraftLocation.latitude
-                val lng = djiFlightControllerCurrentState.aircraftLocation.longitude
-                activityCallback.updateDroneLocation(lat, lng)
-            }
-        }
-    }
-    //endregion
 }

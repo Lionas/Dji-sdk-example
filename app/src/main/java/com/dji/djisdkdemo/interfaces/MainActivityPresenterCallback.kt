@@ -10,8 +10,4 @@ interface MainActivityPresenterCallback {
     fun requestPermissions(missingPermission: MutableList<String>)
     fun setProductModel(model: Model?)
     fun notifyStatusChange()
-
-    //region map control
-    fun updateDroneLocation(lat: Double, lng: Double)
-    //endregion
 }
