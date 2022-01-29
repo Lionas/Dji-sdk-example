@@ -111,7 +111,13 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     }
 
     fun notifyStatusChange() {
-        //TODO
+        handler.removeCallbacks(updateRunnable)
+        handler.postDelayed(updateRunnable, 500)
+    }
+
+    private val updateRunnable = Runnable {
+        val intent = Intent(MainActivity.FLAG_CONNECTION_CHANGE)
+        weakActivityReference.get()?.sendBroadcast(intent)
     }
 
     fun initUI(savedInstanceState: Bundle?) {
