@@ -9,6 +9,7 @@ import android.view.View
 import android.view.animation.Animation
 import android.view.animation.Transformation
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentContainerView
@@ -112,6 +113,19 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
 
     fun notifyStatusChange() {
         //TODO
+    }
+
+    fun onLoginSuccess() {
+        // TODO
+    }
+
+    fun showToast(message: String) {
+        weakActivityReference.get().let { appCompatActivity ->
+            appCompatActivity?.runOnUiThread {
+                Toast.makeText(appCompatActivity, message, Toast.LENGTH_LONG).show()
+                Log.d(TAG, message)
+            }
+        }
     }
 
     fun initUI(savedInstanceState: Bundle?) {

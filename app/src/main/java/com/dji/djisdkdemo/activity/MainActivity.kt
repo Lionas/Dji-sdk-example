@@ -30,6 +30,10 @@ class MainActivity : AppCompatActivity() {
 
     // call from presenter
     private val callback = object: MainActivityCallback {
+        override fun showToast(message: String) {
+            uiController.showToast(message)
+        }
+
         override fun setStatusMessage(message: String) {
             uiController.setTextViewStatusMessage(message)
         }
@@ -52,6 +56,10 @@ class MainActivity : AppCompatActivity() {
 
         override fun updateDroneLocation(lat: Double, lng: Double) {
             uiController.updateDroneLocation(lat, lng)
+        }
+
+        override fun onLoginSuccess() {
+            uiController.onLoginSuccess()
         }
     }
 
