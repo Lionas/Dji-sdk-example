@@ -14,7 +14,6 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     companion object {
         const val TAG = "MainActivity"
-        const val FLAG_CONNECTION_CHANGE = "dji_sdk_connection_change"
         const val REQUEST_PERMISSION_CODE = 12345
         private var isAppStarted = false
 
