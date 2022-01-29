@@ -9,9 +9,6 @@ interface ActiveTrackMissionPresenterCallback {
     // トーストに表示する
     fun setResultToToast(message: String)
 
-    // マルチトラッキングを設定する
-    fun setMultiTracking(enabled: Boolean)
-
     // アクティブトラック関連ボタンの非表示
     fun disableButtonVisibilities()
 
@@ -29,13 +26,4 @@ interface ActiveTrackMissionPresenterCallback {
 
     // ボタンの表示非表示を更新する
     fun updateButtonVisibility(event: ActiveTrackMissionEvent)
-
-    // 現在の表示を消去する
-    fun clearCurrentView()
-
-    // 選択範囲の描画中かどうか
-    fun setDrawingRect(isDrawing: Boolean)
-
-    // 追跡用インデックスの設定
-    fun setTrackingIndex(index: Int)
 }

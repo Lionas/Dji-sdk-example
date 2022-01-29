@@ -1,8 +1,6 @@
 package com.dji.djisdkdemo.ui
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Color
 import android.graphics.RectF
 import android.view.MotionEvent
 import android.view.View
@@ -18,8 +16,6 @@ import dji.common.mission.activetrack.ActiveTrackMissionEvent
 import dji.common.mission.activetrack.ActiveTrackState
 import dji.common.mission.activetrack.ActiveTrackTargetState
 import java.lang.ref.WeakReference
-import dji.common.mission.activetrack.SubjectSensingState
-import java.util.concurrent.ConcurrentHashMap
 import android.widget.RelativeLayout
 
 /**
@@ -45,20 +41,16 @@ class ActiveTrackMissionViewController(
 
     //region active track
     private var activeTrackMissionPresenter: ActiveTrackMissionPresenter? = null
-    private val targetViewHashMap: ConcurrentHashMap<Int, MultiTrackingView> = ConcurrentHashMap()
     private lateinit var layoutParams: RelativeLayout.LayoutParams
     private lateinit var sendRectIv: ImageView
     private lateinit var trackingImage: ImageView
     private lateinit var confirmBtn: Button
     private lateinit var rejectBtn: Button
     private lateinit var configBtn: Button
-    private lateinit var multiTrackingSwitch: SwitchCompat
     private lateinit var pushBackSwitch: SwitchCompat
     private lateinit var gestureSwitch: SwitchCompat
     private var downX = 0f
     private var downY = 0f
-    private var isDrawingRect = false
-    private var trackingIndex: Int = INVALID_INDEX
     //endregion
 
     @SuppressLint("ClickableViewAccessibility")
@@ -74,7 +66,6 @@ class ActiveTrackMissionViewController(
             sendRectIv = it.findViewById(R.id.tracking_send_rect_iv) as ImageView
             trackingImage = it.findViewById(R.id.tracking_rst_rect_iv) as ImageView
 
-            initMultiTrackingSwitch()
             initPushBackSwitch()
             initGestureSwitch()
             initTrackingBgLayout()
@@ -83,19 +74,6 @@ class ActiveTrackMissionViewController(
             initRejectButton()
             initConfigButton()
             initPushDrawerIb()
-        }
-    }
-
-    private fun initMultiTrackingSwitch() {
-        weakActivityReference.get().let { appCompatActivity ->
-            appCompatActivity?.runOnUiThread {
-                multiTrackingSwitch =
-                    appCompatActivity.findViewById(R.id.tracking_multi_tracking_enabled) as SwitchCompat
-                multiTrackingSwitch.isChecked = false
-                multiTrackingSwitch.setOnCheckedChangeListener { _, isChecked ->
-                    activeTrackMissionPresenter?.setAutoHumanTrackingEnabled(isChecked)
-                }
-            }
         }
     }
 
@@ -131,12 +109,7 @@ class ActiveTrackMissionViewController(
                 confirmBtn = appCompatActivity.findViewById(R.id.confirm_btn) as Button
                 confirmBtn.setOnClickListener {
                     activeTrackMissionPresenter?.let { presenter ->
-                        val isAutoTracking = presenter.isAutoTracking()
-                        if (isAutoTracking) {
-                            presenter.startAutoSensingMission(trackingIndex)
-                        } else {
-                            presenter.acceptConfirmation()
-                        }
+                        presenter.acceptConfirmation()
                         stopBtn.visibility = View.VISIBLE
                         rejectBtn.visibility = View.VISIBLE
                         confirmBtn.visibility = View.INVISIBLE
@@ -163,7 +136,6 @@ class ActiveTrackMissionViewController(
             appCompatActivity?.runOnUiThread {
                 stopBtn = appCompatActivity.findViewById(R.id.tracking_stop_btn) as ImageButton
                 stopBtn.setOnClickListener {
-                    trackingIndex = INVALID_INDEX
                     activeTrackMissionPresenter?.stopTracking()
                     trackingImage.let {
                         it.visibility = View.INVISIBLE
@@ -224,7 +196,6 @@ class ActiveTrackMissionViewController(
         when (event.action) {
             // 指が置かれた
             MotionEvent.ACTION_DOWN -> {
-                isDrawingRect = false
                 // 指を置いた座標を記録
                 downX = event.x
                 downY = event.y
@@ -233,17 +204,6 @@ class ActiveTrackMissionViewController(
             // 指を動かしている（ドラッグ）
             MotionEvent.ACTION_MOVE -> {
                 activeTrackMissionPresenter?.let { it ->
-                    // 最初に指が置かれた座標と現在の座標の間のマンハッタン距離を算出する
-                    val distance = it.calcManhattanDistance(downX, downY, event.x, event.y)
-                    // 所定の距離以内で、かつ、領域が描画中でいない場合
-                    if (distance < MOVE_OFFSET && isDrawingRect.not()) {
-                        // ターゲットの中からタップした座標にあるビューを取得し、ビューの背景を赤色に設定する
-                        trackingIndex = it.getTrackingIndex(downX, downY, targetViewHashMap)
-                        targetViewHashMap[trackingIndex]?.setBackgroundColor(Color.RED)
-                        return true
-                    }
-                    // 領域を描画中にする
-                    isDrawingRect = true
                     // 描画領域を表示する
                     sendRectIv.visibility = View.VISIBLE
                     // 最初にタップした座標と現在の座標までの矩形領域を生成する
@@ -259,21 +219,12 @@ class ActiveTrackMissionViewController(
                         // ジェスチャーモードが有効な場合、タップは無効なためメッセージを表示する
                         callback.setResultToToast("Please try to start Gesture Mode!")
                     }
-                    isDrawingRect.not() -> {
-                        // ドラッグしなかった場合
-                        targetViewHashMap[trackingIndex]?.let {
-                            val message = "Selected Index: ${trackingIndex}, Please Confirm it!"
-                            callback.setResultToToast(message)
-                            it.setBackgroundColor(Color.TRANSPARENT)
-                        }
-                    }
                     else -> {
                         // 指定した領域のトラッキングを開始する
                         activeTrackMissionPresenter?.let {
                             val rectF: RectF = it.getActiveTrackRect(sendRectIv)
                             it.startTracking(rectF)
                             sendRectIv.visibility = View.INVISIBLE
-                            clearCurrentViews()
                         }
                     }
                 }
@@ -299,63 +250,13 @@ class ActiveTrackMissionViewController(
         view?.let { imageView ->
             event?.let { evt ->
                 evt.trackingState?.let { tracking ->
-                    tracking.autoSensedSubjects?.let { subjects ->
-                        // マルチトラッキングの対象の場合
-                        val targetSensingInformation: Array<SubjectSensingState> = subjects
-                        weakActivityReference.get().let { appCompatActivity ->
-                            appCompatActivity?.runOnUiThread {
-                                // 複数の領域を更新する
-                                updateMultiTrackingView(appCompatActivity, targetSensingInformation)
-                            }
-                        }
-                    } ?: run {
-                        // マルチトラッキングではない場合
-                        tracking.targetRect?.let { rectF ->
-                            tracking.state?.let { state ->
-                                // 単一領域を更新する
-                                postResultRect(imageView, rectF, state)
-                            }
+                    tracking.targetRect?.let { rectF ->
+                        tracking.state?.let { state ->
+                            // 領域を更新する
+                            postResultRect(imageView, rectF, state)
                         }
                     }
                 }
-            }
-        }
-    }
-
-    // 単数または複数のターゲットをビューに反映する
-    private fun updateMultiTrackingView(context: Context, targets: Array<SubjectSensingState>) {
-        // ターゲットの情報を更新する。新しいターゲットの場合は追加する。
-        val indexes: ArrayList<Int> = ArrayList()
-        for (target in targets) {
-            indexes.add(target.index)
-            if (targetViewHashMap.containsKey(target.index)) {
-                targetViewHashMap[target.index]?.let {
-                    postMultiResultRect(it, target.targetRect, target)
-                }
-            } else {
-                val trackingView = MultiTrackingView(context)
-                bgLayout.addView(trackingView, layoutParams)
-                targetViewHashMap[target.index] = trackingView
-            }
-        }
-
-        // いなくなったターゲットをビューから消す
-        val missingIndexes: ArrayList<Int> = ArrayList()
-        for (key in targetViewHashMap.keys()) {
-            var isDisappeared = true
-            for (index in indexes) {
-                if (index == key) {
-                    isDisappeared = false
-                    break
-                }
-            }
-            if (isDisappeared) {
-                missingIndexes.add(key)
-            }
-        }
-        for (index in missingIndexes) {
-            targetViewHashMap.remove(index)?.let {
-                bgLayout.removeView(it)
             }
         }
     }
@@ -374,19 +275,6 @@ class ActiveTrackMissionViewController(
                 view.layoutParams.width = r - l
                 view.layoutParams.height = b - t
                 view.requestLayout()
-            }
-        }
-    }
-
-    // マルチトラッキングビューの描画
-    private fun postMultiResultRect(v: MultiTrackingView, rectF: RectF, info: SubjectSensingState) {
-        // RectF座標系からビュー座標系への変換
-        translateFromRectToView(v, rectF)
-
-        weakActivityReference.get().let { appCompatActivity ->
-            appCompatActivity?.runOnUiThread {
-                trackingImage.visibility = View.INVISIBLE
-                v.updateView(info)
             }
         }
     }
@@ -472,12 +360,6 @@ class ActiveTrackMissionViewController(
                             callback.setResultToToast(message)
                         }
 
-                        override fun setMultiTracking(enabled: Boolean) {
-                            multiTrackingSwitch.apply {
-                                isChecked = enabled
-                            }
-                        }
-
                         override fun disableButtonVisibilities() {
                             weakActivityReference.get().let { appCompatActivity ->
                                 appCompatActivity?.runOnUiThread {
@@ -516,18 +398,6 @@ class ActiveTrackMissionViewController(
                         override fun updateButtonVisibility(event: ActiveTrackMissionEvent) {
                             updateButtonsVisibilityAndClickable(event)
                         }
-
-                        override fun clearCurrentView() {
-                            clearCurrentViews()
-                        }
-
-                        override fun setDrawingRect(isDrawing: Boolean) {
-                            isDrawingRect = isDrawing
-                        }
-
-                        override fun setTrackingIndex(index: Int) {
-                            trackingIndex = index
-                        }
                     }
                 )
 
@@ -553,21 +423,5 @@ class ActiveTrackMissionViewController(
     fun onLoginSuccess() {
         // ログイン後に呼び出さないとエラーになる
         activeTrackMissionPresenter?.getRetreatEnabled()
-    }
-
-    private fun clearCurrentViews() {
-        if (targetViewHashMap.isNotEmpty()) {
-            val it: MutableIterator<Map.Entry<Int, MultiTrackingView>> = targetViewHashMap.entries.iterator()
-            while (it.hasNext()) {
-                val entry: Map.Entry<Int, MultiTrackingView> = it.next()
-                val view: MultiTrackingView = entry.value
-                it.remove()
-                weakActivityReference.get().let { appCompatActivity ->
-                    appCompatActivity?.runOnUiThread {
-                        bgLayout.removeView(view)
-                    }
-                }
-            }
-        }
     }
 }

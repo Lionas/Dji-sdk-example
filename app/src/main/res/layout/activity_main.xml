@@ -403,33 +403,8 @@
             android:layout_alignParentEnd="true"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
-            android:layout_above="@+id/layout_multi_tracking"
+            android:layout_above="@+id/layout_pull_back"
             android:text="Config" />
-
-        <LinearLayout
-            android:id="@+id/layout_multi_tracking"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_alignParentEnd="true"
-            android:layout_above="@id/layout_pull_back"
-            >
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="マルチトラッキング"
-                android:gravity="center"
-                android:layout_gravity="center"
-                android:textColor="@color/white" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/tracking_multi_tracking_enabled"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center" />
-
-        </LinearLayout>
 
         <LinearLayout
             android:id="@+id/layout_pull_back"

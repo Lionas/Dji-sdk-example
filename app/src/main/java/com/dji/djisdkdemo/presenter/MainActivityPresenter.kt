@@ -118,16 +118,17 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                 }
                 override fun onProductDisconnect() {
                     Log.d(TAG, "onProductDisconnect")
-                    notifyStatusChange(context, "Product Disconnected")
+                    notifyStatusChange("Product Disconnected")
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
-                    notifyStatusChange(context, "Product connected")
+                    notifyStatusChange("Product connected :$baseProduct")
+                    loginAccount(context)
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductChanged")
-                    notifyStatusChange(context, "Product changed")
+                    notifyStatusChange("Product changed")
                 }
 
                 override fun onComponentChange(
@@ -136,11 +137,11 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                     newComponent: BaseComponent?
                 ) {
                     newComponent?.let {
-                        it.setComponentListener {
-                            Log.d(TAG, "onComponentChange: $it")
+                        it.setComponentListener { boolean ->
+                            Log.d(TAG, "onComponentChange: $boolean")
                         }
                     }
-                    notifyStatusChange(context, "onComponentChanged")
+                    notifyStatusChange("onComponentChanged")
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
                 }
 
@@ -166,27 +167,29 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
         }
     }
 
-    private fun notifyStatusChange(context: Context, message: String) {
+    private fun notifyStatusChange(message: String) {
         activityCallback.notifyStatusChange()
         setProduct()
         activityCallback.setStatusMessage(message)
-        loginAccount(context)
     }
 
     private fun loginAccount(context: Context) {
-        UserAccountManager.getInstance().logIntoDJIUserAccount(
-            context,
-            object : CompletionCallbackWith<UserAccountState?> {
-                override fun onSuccess(userAccountState: UserAccountState?) {
-                    Log.d(TAG, "Login Success")
-                    activityCallback.onLoginSuccess()
-                }
+        val userAccountState = UserAccountManager.getInstance().userAccountState
+        if (userAccountState != UserAccountState.AUTHORIZED) {
+            UserAccountManager.getInstance().logIntoDJIUserAccount(
+                context,
+                object : CompletionCallbackWith<UserAccountState?> {
+                    override fun onSuccess(userAccountState: UserAccountState?) {
+                        Log.d(TAG, "Login Success")
+                        activityCallback.onLoginSuccess()
+                    }
 
-                override fun onFailure(error: DJIError) {
-                    Log.e(TAG, "Login Error:" + error.description)
+                    override fun onFailure(error: DJIError) {
+                        Log.e(TAG, "Login Error:" + error.description)
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     private fun setProduct() {
