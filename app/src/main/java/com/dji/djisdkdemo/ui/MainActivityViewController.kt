@@ -124,6 +124,10 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         initPreviewer()
     }
 
+    fun onLoginSuccess() {
+        activeTrackMissionViewController.onLoginSuccess()
+    }
+
     private fun showToast(message: String) {
         weakActivityReference.get().let { appCompatActivity ->
             appCompatActivity?.runOnUiThread {

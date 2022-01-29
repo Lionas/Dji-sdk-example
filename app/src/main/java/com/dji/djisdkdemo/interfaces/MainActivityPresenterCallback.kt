@@ -10,4 +10,7 @@ interface MainActivityPresenterCallback {
     fun requestPermissions(missingPermission: MutableList<String>)
     fun setProductModel(model: Model?)
     fun notifyStatusChange()
+
+    // ログイン成功時
+    fun onLoginSuccess()
 }

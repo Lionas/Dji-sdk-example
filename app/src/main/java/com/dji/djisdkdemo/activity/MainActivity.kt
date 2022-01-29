@@ -50,6 +50,10 @@ class MainActivity : AppCompatActivity() {
         override fun notifyStatusChange() {
             uiController.notifyStatusChange()
         }
+
+        override fun onLoginSuccess() {
+            uiController.onLoginSuccess()
+        }
     }
 
     private val presenter = MainActivityPresenter(callback)

@@ -109,7 +109,6 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
                         activityCallback.setStatusMessage("Register Success")
                         DJISDKManager.getInstance().startConnectionToProduct()
-//                        loginAccount(context)
                     } else {
                         activityCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
                     }
@@ -119,21 +118,16 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                 }
                 override fun onProductDisconnect() {
                     Log.d(TAG, "onProductDisconnect")
-                    activityCallback.setStatusMessage("Product Disconnected")
-                    setProduct()
-                    notifyStatusChange()
+                    notifyStatusChange(context, "Product Disconnected")
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductConnect newProduct:$baseProduct")
-                    activityCallback.setStatusMessage("Product connected")
-                    setProduct()
-                    notifyStatusChange()
+                    notifyStatusChange(context, "Product connected")
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
                     Log.d(TAG, "onProductChanged")
-                    activityCallback.setStatusMessage("Product changed")
-                    setProduct()
+                    notifyStatusChange(context, "Product changed")
                 }
 
                 override fun onComponentChange(
@@ -146,9 +140,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                             Log.d(TAG, "onComponentChange: $it")
                         }
                     }
-                    activityCallback.setStatusMessage("onComponentChanged")
-                    setProduct()
-                    notifyStatusChange()
+                    notifyStatusChange(context, "onComponentChanged")
                     Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
                 }
 
@@ -174,8 +166,11 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
         }
     }
 
-    private fun notifyStatusChange() {
+    private fun notifyStatusChange(context: Context, message: String) {
         activityCallback.notifyStatusChange()
+        setProduct()
+        activityCallback.setStatusMessage(message)
+        loginAccount(context)
     }
 
     private fun loginAccount(context: Context) {
@@ -184,6 +179,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
             object : CompletionCallbackWith<UserAccountState?> {
                 override fun onSuccess(userAccountState: UserAccountState?) {
                     Log.d(TAG, "Login Success")
+                    activityCallback.onLoginSuccess()
                 }
 
                 override fun onFailure(error: DJIError) {

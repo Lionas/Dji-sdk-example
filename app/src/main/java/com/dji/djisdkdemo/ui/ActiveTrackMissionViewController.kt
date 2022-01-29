@@ -443,8 +443,8 @@ class ActiveTrackMissionViewController(
                         stopBtn.isClickable = true
                         confirmBtn.visibility = View.INVISIBLE
                         confirmBtn.isClickable = false
-                        rejectBtn.visibility = View.VISIBLE
-                        rejectBtn.isClickable = true
+                        rejectBtn.visibility = View.INVISIBLE
+                        rejectBtn.isClickable = false
                         configBtn.visibility = View.GONE
                     }
 
@@ -454,8 +454,9 @@ class ActiveTrackMissionViewController(
                         confirmBtn.visibility = View.INVISIBLE
                         confirmBtn.isClickable = false
                         rejectBtn.visibility = View.INVISIBLE
-                        rejectBtn.isClickable = true
+                        rejectBtn.isClickable = false
                         trackingImage.visibility = View.INVISIBLE
+                        configBtn.visibility = View.VISIBLE
                     }
                 }
             }
@@ -540,10 +541,6 @@ class ActiveTrackMissionViewController(
                 activeTrackMissionPresenter?.getGestureModeEnabled()?.let {
                     gestureSwitch.isChecked = it
                 }
-                val handler = Handler(Looper.getMainLooper())
-                handler.postDelayed({
-                    activeTrackMissionPresenter?.getRetreatEnabled()
-                }, 1000L)
             }
             Lifecycle.Event.ON_PAUSE -> Unit
             Lifecycle.Event.ON_START -> Unit
@@ -553,6 +550,11 @@ class ActiveTrackMissionViewController(
             }
             Lifecycle.Event.ON_ANY -> Unit
         }
+    }
+
+    fun onLoginSuccess() {
+        // ログイン後に呼び出さないとエラーになる
+        activeTrackMissionPresenter?.getRetreatEnabled()
     }
 
     private fun clearCurrentViews() {
