@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.graphics.RectF
-import android.os.Handler
-import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
 import android.widget.*
@@ -95,7 +93,7 @@ class ActiveTrackMissionViewController(
                     appCompatActivity.findViewById(R.id.tracking_multi_tracking_enabled) as SwitchCompat
                 multiTrackingSwitch.isChecked = false
                 multiTrackingSwitch.setOnCheckedChangeListener { _, isChecked ->
-                    activeTrackMissionPresenter?.setMultiTrackingEnabled(isChecked)
+                    activeTrackMissionPresenter?.setAutoHumanTrackingEnabled(isChecked)
                 }
             }
         }

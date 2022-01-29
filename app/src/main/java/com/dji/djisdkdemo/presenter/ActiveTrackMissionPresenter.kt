@@ -26,7 +26,7 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
         FlightControllerKey.createFlightAssistantKey(FlightControllerKey.ACTIVE_TRACK_MODE)
     private var startMode = ActiveTrackMode.TRACE
 
-    private var isAutoSensingSupported = false
+    private var isAutoSensing = false
 
     // アクティブトラックミッションの初期化
     fun initActiveTrackMission() {
@@ -36,6 +36,7 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
         }
     }
 
+    // TODO 整理する
     // ミッション実行中のステータスを監視する
     private fun onUpdate(event: ActiveTrackMissionEvent) {
         val sb = StringBuffer()
@@ -72,7 +73,7 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
                         addLineToSB(sb, "Target Index: ", subjectSensingState.index)
                         addLineToSB(sb, "Target Type", subjectSensingState.targetType.name)
                         addLineToSB(sb, "Target State", subjectSensingState.state.name)
-                        isAutoSensingSupported = true
+                        isAutoSensing = true
                     }
                 }
             } else {
@@ -86,7 +87,7 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
                     addLineToSB(sb, "Target Index: ", trackingState.targetIndex)
                     addLineToSB(sb, "Target Type", trackingState.type!!.name)
                     addLineToSB(sb, "Target State", trackingState.state!!.name)
-                    isAutoSensingSupported = false
+                    isAutoSensing = false
                 }
                 callback.clearCurrentView()
             }
@@ -104,17 +105,22 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
         stringBuilder?.append(validatedName)?.append(validatedValue)?.append("\n")
     }
 
-    fun setMultiTrackingEnabled(enabled: Boolean) {
+    // 人を自動的に追跡するかどうか
+    fun setAutoHumanTrackingEnabled(enabled: Boolean) {
         activeTrackOperator?.let {
-            if (enabled) {
-                enableMultiTracking(it)
+            // 追跡有効にする設定がされた かつ ドローンに人の自動追跡機能があれば
+            if (enabled && it.isAutoSensingSupported) {
+                // 人の追跡機能を有効にする
+                enableAutoHumanTracking(it)
             } else {
-                disableMultiTracking(it)
+                // 人の追跡機能を無効にする
+                disableAutoHumanTracking(it)
             }
         }
     }
 
-    private fun enableMultiTracking(activeTrackOperator: ActiveTrackOperator) {
+    // 人の追跡機能を有効にする
+    private fun enableAutoHumanTracking(activeTrackOperator: ActiveTrackOperator) {
         startMode = ActiveTrackMode.TRACE
         activeTrackOperator.enableAutoSensing { error ->
             val message = error?.let {
@@ -127,12 +133,14 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
         }
     }
 
-    private fun disableMultiTracking(activeTrackOperator: ActiveTrackOperator) {
+    // 人の追跡を無効にする
+    private fun disableAutoHumanTracking(activeTrackOperator: ActiveTrackOperator) {
         activeTrackOperator.disableAutoSensing { error ->
             val message = error?.let {
+                callback.setMultiTracking(false)
                 "Disable Auto Sensing : ${it.description}"
             } ?: run {
-                isAutoSensingSupported = false
+                isAutoSensing = false
                 callback.disableButtonVisibilities()
                 callback.clearCurrentView()
                 "Disable Auto Sensing Success!"
@@ -236,7 +244,7 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
     // 自動追跡かどうか
     fun isAutoTracking() : Boolean {
         val isAutoSensingEnabled = activeTrackOperator?.isAutoSensingEnabled ?: false
-        return isAutoSensingSupported && isAutoSensingEnabled
+        return isAutoSensing && isAutoSensingEnabled
     }
 
     // 自動追跡開始
