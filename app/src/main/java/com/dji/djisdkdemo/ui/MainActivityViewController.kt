@@ -4,13 +4,13 @@ import android.graphics.SurfaceTexture
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.*
 import com.dji.djisdkdemo.R
-import com.dji.djisdkdemo.interfaces.TapFlyMissionViewControllerCallback
 import dji.common.product.Model
 import dji.thirdparty.io.reactivex.android.schedulers.AndroidSchedulers
 import dji.thirdparty.io.reactivex.disposables.CompositeDisposable
@@ -29,12 +29,14 @@ import dji.ux.panel.CameraSettingExposurePanel
 import java.lang.ref.WeakReference
 import android.widget.Toast
 import dji.sdk.codec.DJICodecManager
-
 import dji.sdk.camera.VideoFeeder
 import dji.sdk.camera.VideoFeeder.VideoDataListener
 import android.view.TextureView
+import com.dji.djisdkdemo.interfaces.ActiveTrackMissionViewControllerCallback
 
-
+/**
+ * メインアクティビティのUI処理
+ */
 class MainActivityViewController(appCompatActivity: AppCompatActivity) : LifecycleEventObserver {
     companion object {
         const val TAG = "MainActivityViewController"
@@ -47,7 +49,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private lateinit var videoSurface: TextureView
 
     // for UXSDK Beta v0.5.1
-    private var isMapMini = true
     private var widgetHeight = 0
     private var widgetWidth = 0
     private var widgetMargin = 0
@@ -71,14 +72,17 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     private var cameraSettingAdvancedPanel: CameraSettingAdvancedPanel? = null
     //endregion
 
-    //region for TapFlyMission
-    private val tapFlyMissionViewControllerCallback = object : TapFlyMissionViewControllerCallback{
+    //region for ActiveTrackMission
+    private val activeTrackMissionViewControllerCallback = object :
+        ActiveTrackMissionViewControllerCallback {
         override fun setResultToToast(message: String) {
             showToast(message)
         }
     }
-    private val tapFlyViewController =
-            TapFlyMissionViewController(appCompatActivity, tapFlyMissionViewControllerCallback)
+    private val activeTrackMissionViewController = ActiveTrackMissionViewController(
+        appCompatActivity,
+        activeTrackMissionViewControllerCallback
+    )
     //endregion
 
     //region for video surface
@@ -98,8 +102,8 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
             initVideoSurface(activity)
             initReceivedVideoDataListener()
 
-            // TapFly
-            tapFlyViewController.initUI()
+            // ActiveTrackMission
+            activeTrackMissionViewController.initUI()
         }
     }
 
@@ -124,6 +128,7 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         weakActivityReference.get().let { appCompatActivity ->
             appCompatActivity?.runOnUiThread {
                 Toast.makeText(appCompatActivity, message, Toast.LENGTH_LONG).show()
+                Log.d(TAG, message)
             }
         }
     }
@@ -222,53 +227,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         }
     }
 
-    private fun onCreateProcess() {
-        weakActivityReference.get()?.lifecycle?.addObserver(tapFlyViewController)
-        initCustomUI()
-    }
-
-    private fun onResumeProcess() {
-        compositeDisposable = CompositeDisposable()
-        systemStatusListPanelWidget?.let {
-            compositeDisposable?.add(
-                it.closeButtonPressed()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { pressed: Boolean ->
-                        if (pressed) {
-                            systemStatusListPanelWidget?.hide()
-                        }
-                    })
-        }
-        rtkWidget?.let {
-            compositeDisposable?.add(
-                it.getUIStateUpdates()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { uiState: RTKWidget.UIState ->
-                        if (uiState is RTKWidget.UIState.VisibilityUpdated) {
-                            if (uiState.isVisible) {
-                                hideOtherPanels(it)
-                            }
-                        }
-                    }
-            )
-        }
-        simulatorControlWidget?.let {
-            compositeDisposable?.add(
-                it.getUIStateUpdates()
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe { simulatorControlWidgetState: SimulatorControlWidget.UIState ->
-                        if (simulatorControlWidgetState is SimulatorControlWidget.UIState.VisibilityUpdated) {
-                            if (simulatorControlWidgetState.isVisible) {
-                                hideOtherPanels(it)
-                            }
-                        }
-                    }
-            )
-        }
-
-        initPreviewer()
-    }
-
     private fun initPreviewer() {
         weakActivityReference.get()?.let {
             initVideoSurface(it)
@@ -284,23 +242,6 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
         receivedVideoDataListener?.let {
             VideoFeeder.getInstance()?.primaryVideoFeed?.removeVideoDataListener(it)
         }
-    }
-
-    fun onSaveInstanceState(outState: Bundle) {
-    }
-
-    fun onLowMemory() = Unit
-
-    private fun onPauseProcess() {
-        compositeDisposable?.let {
-            it.dispose()
-            compositeDisposable = null
-        }
-        resetPreviewer()
-    }
-
-    private fun onDestroyProcess() {
-        resetPreviewer()
     }
 
     //region Utils
@@ -335,20 +276,64 @@ class MainActivityViewController(appCompatActivity: AppCompatActivity) : Lifecyc
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             Lifecycle.Event.ON_CREATE -> {
-                onCreateProcess()
+                initCustomUI()
+                weakActivityReference.get()?.lifecycle?.addObserver(activeTrackMissionViewController)
             }
             Lifecycle.Event.ON_RESUME -> {
-                onResumeProcess()
+                compositeDisposable = CompositeDisposable()
+                systemStatusListPanelWidget?.let {
+                    compositeDisposable?.add(
+                        it.closeButtonPressed()
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe { pressed: Boolean ->
+                                if (pressed) {
+                                    systemStatusListPanelWidget?.hide()
+                                }
+                            })
+                }
+                rtkWidget?.let {
+                    compositeDisposable?.add(
+                        it.getUIStateUpdates()
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe { uiState: RTKWidget.UIState ->
+                                if (uiState is RTKWidget.UIState.VisibilityUpdated) {
+                                    if (uiState.isVisible) {
+                                        hideOtherPanels(it)
+                                    }
+                                }
+                            }
+                    )
+                }
+                simulatorControlWidget?.let {
+                    compositeDisposable?.add(
+                        it.getUIStateUpdates()
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe { simulatorControlWidgetState: SimulatorControlWidget.UIState ->
+                                if (simulatorControlWidgetState is SimulatorControlWidget.UIState.VisibilityUpdated) {
+                                    if (simulatorControlWidgetState.isVisible) {
+                                        hideOtherPanels(it)
+                                    }
+                                }
+                            }
+                    )
+                }
+                initPreviewer()
             }
             Lifecycle.Event.ON_PAUSE -> {
-                onPauseProcess()
+                compositeDisposable?.let {
+                    it.dispose()
+                    compositeDisposable = null
+                }
+                resetPreviewer()
             }
             Lifecycle.Event.ON_START -> Unit
             Lifecycle.Event.ON_STOP -> Unit
             Lifecycle.Event.ON_DESTROY -> {
-                onDestroyProcess()
+                resetPreviewer()
             }
             Lifecycle.Event.ON_ANY -> Unit
         }
     }
+
+    fun onLowMemory() = Unit
 }

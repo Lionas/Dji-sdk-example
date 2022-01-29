@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
         super.onSaveInstanceState(outState, outPersistentState)
-        uiController.onSaveInstanceState(outState)
+//        uiController.onSaveInstanceState(outState)
     }
 
     override fun onLowMemory() {

@@ -109,7 +109,7 @@ class MainActivityPresenter(private val activityCallback: MainActivityPresenterC
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
                         activityCallback.setStatusMessage("Register Success")
                         DJISDKManager.getInstance().startConnectionToProduct()
-                        loginAccount(context)
+//                        loginAccount(context)
                     } else {
                         activityCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
                     }
