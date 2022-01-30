@@ -26,11 +26,6 @@ class ActiveTrackMissionViewController(
     private val callback: ActiveTrackMissionViewControllerCallback
 ) : LifecycleEventObserver {
 
-    companion object {
-        const val MOVE_OFFSET = 20
-        const val INVALID_INDEX: Int = -1
-    }
-
     private val weakActivityReference = WeakReference(appCompatActivity)
 
     private lateinit var pushDrawerIb: ImageButton
