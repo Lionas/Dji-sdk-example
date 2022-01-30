@@ -160,6 +160,20 @@ class ActiveTrackMissionPresenter(private val callback: ActiveTrackMissionPresen
         )
     }
 
+    // RectF座標系からビュー座標系への変換
+    fun translateFromRectToViewParams(view: View, rectF: RectF) : View {
+        val parent = view.parent as View
+        val l = ((rectF.centerX() - rectF.width() / 2) * parent.width).toInt()
+        val t = ((rectF.centerY() - rectF.height() / 2) * parent.height).toInt()
+        val r = ((rectF.centerX() + rectF.width() / 2) * parent.width).toInt()
+        val b = ((rectF.centerY() + rectF.height() / 2) * parent.height).toInt()
+        view.x = l.toFloat()
+        view.y = t.toFloat()
+        view.layoutParams.width = r - l
+        view.layoutParams.height = b - t
+        return view
+    }
+
     // 確認受諾
     fun acceptConfirmation() {
         activeTrackOperator?.acceptConfirmation {

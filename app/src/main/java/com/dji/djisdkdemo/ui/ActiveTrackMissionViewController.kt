@@ -186,7 +186,7 @@ class ActiveTrackMissionViewController(
         }
     }
 
-    // トラッキング波形をタップした時の処理
+    // トラッキングエリアをタップした時の処理
     private fun onTrackingBgLayoutTouch(v: View, event: MotionEvent) : Boolean {
         when (event.action) {
             // 指が置かれた
@@ -258,18 +258,10 @@ class ActiveTrackMissionViewController(
 
     // RectF座標系からビュー座標系への変換
     private fun translateFromRectToView(view: View, rectF: RectF) {
-        val parent = view.parent as View
-        val l = ((rectF.centerX() - rectF.width() / 2) * parent.width).toInt()
-        val t = ((rectF.centerY() - rectF.height() / 2) * parent.height).toInt()
-        val r = ((rectF.centerX() + rectF.width() / 2) * parent.width).toInt()
-        val b = ((rectF.centerY() + rectF.height() / 2) * parent.height).toInt()
+        val newView = activeTrackMissionPresenter?.translateFromRectToViewParams(view, rectF)
         weakActivityReference.get().let { appCompatActivity ->
             appCompatActivity?.runOnUiThread {
-                view.x = l.toFloat()
-                view.y = t.toFloat()
-                view.layoutParams.width = r - l
-                view.layoutParams.height = b - t
-                view.requestLayout()
+                newView?.requestLayout()
             }
         }
     }
