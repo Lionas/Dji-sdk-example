@@ -20,12 +20,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 import dji.common.useraccount.UserAccountState
 import dji.common.util.CommonCallbacks.CompletionCallbackWith
 import dji.sdk.useraccount.UserAccountManager
-import dji.sdk.flightcontroller.FlightController
-import dji.sdk.products.Aircraft
 
+// MainActivityの処理
 class MainActivityPresenter(private val activityCallback: MainActivityCallback) {
+
     companion object {
         const val TAG = "MainActivityPresenter"
+
+        // 必要な権限のリスト
         val REQUIRED_PERMISSION_LIST = arrayOf(
             Manifest.permission.VIBRATE,
             Manifest.permission.INTERNET,
@@ -46,94 +48,102 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
     private var djiSdkManager: DJISDKManager? = null
     private var missingPermission = mutableListOf<String>()
     private var isRegistrationInProgress = AtomicBoolean(false)
-
     private var lastProgress = -1
+
     private val scope = CoroutineScope(Dispatchers.Default)
 
-    //region definition for flight controller
-    private var flightController: FlightController? = null
-    //endregion
-
+    // 権限の取得確認と権限取得の要求
     fun checkAndRequestPermissions(context: Context) {
-        // Check for permissions
+        // パーミッションの確認
         for (eachPermission in REQUIRED_PERMISSION_LIST) {
             val permission = ContextCompat.checkSelfPermission(context, eachPermission)
             if (permission != PackageManager.PERMISSION_GRANTED) {
+                // 権限が得られていない項目を権限未取得リストに追加
                 missingPermission.add(eachPermission)
             }
         }
-        // Request for missing permissions
         if (missingPermission.isEmpty()) {
+            // 全ての権限が得られていたらSDKの登録開始
             startSDKRegistration(context)
         } else {
-            activityCallback.setStatusMessage("Need to grant the permissions!")
+            // 全ての権限が得られていない場合は権限取得を要求
+            activityCallback.setStatusMessage("権限の付与が必要です")
             activityCallback.requestPermissions(missingPermission)
         }
     }
 
+    // 権限取得結果
     fun onRequestPermissionsResult(
         context: Context,
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
-        // Check for granted permission and remove from missing list
         if (requestCode == MainActivity.REQUEST_PERMISSION_CODE) {
             for (i in grantResults.size-1 downTo 0) {
                 if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    // 取得された権限は権限未取得リストから除外
                     missingPermission.remove(permissions[i])
                 }
             }
         }
-        // If there is enough permission, we will start the registration
         if (missingPermission.isEmpty()) {
+            // 全ての権限が得られていたらSDKの登録開始
             startSDKRegistration(context)
         } else {
-            activityCallback.setStatusMessage("Missing permissions!!!")
+            // まだ足りない場合は処理続行を諦める
+            activityCallback.setStatusMessage("権限が取得されていないので開始できません")
         }
     }
 
+    // 終了処理
     fun dispose() {
-        // Prevent memory leak by releasing DJISDKManager's references to this activity
+        // このアクティビティからの参照によるメモリリークを防止するためSDKを終了する
         if (djiSdkManager != null) {
             djiSdkManager?.destroy()
         }
     }
 
+    // SDK登録開始処理
     private fun startSDKRegistration(context: Context) {
         if (isRegistrationInProgress.compareAndSet(false, true)) {
+            // 登録開始処理中でなければ登録処理を開始
             registerApp(context)
         }
     }
 
+    // SDKの登録処理
     private fun registerApp(context: Context) {
+        // 非同期処理として実行
         scope.launch(Dispatchers.Default) {
-            activityCallback.setStatusMessage("registering, pls wait...")
+            activityCallback.setStatusMessage("SDK登録中...")
 
+            // SDKからのコールバック
             val callback = object : DJISDKManager.SDKManagerCallback {
                 override fun onRegister(djiError: DJIError?) {
                     if (djiError == DJISDKError.REGISTRATION_SUCCESS) {
-                        activityCallback.setStatusMessage("Register Success")
+                        activityCallback.setStatusMessage("SDK登録完了")
+
+                        // ドローンに接続開始
                         DJISDKManager.getInstance().startConnectionToProduct()
                     } else {
-                        activityCallback.setStatusMessage("Register sdk fails, please check the bundle id and network connection!")
+                        activityCallback.setStatusMessage("SDKの登録に失敗しました")
                     }
                     djiError?.let {
+                        // ログにも詳細を出力しておく
                         Log.v(TAG, it.description)
                     }
                 }
                 override fun onProductDisconnect() {
-                    Log.d(TAG, "onProductDisconnect")
-                    notifyStatusChange(context, "Product Disconnected")
+                    notifyStatusChange("切断されました")
                 }
                 override fun onProductConnect(baseProduct: BaseProduct?) {
-                    Log.d(TAG, "onProductConnect newProduct:$baseProduct")
-                    notifyStatusChange(context, "Product connected")
+                    loginAccount(context)
+                    notifyStatusChange("接続されました: $baseProduct")
                 }
 
                 override fun onProductChanged(baseProduct: BaseProduct?) {
-                    Log.d(TAG, "onProductChanged")
-                    notifyStatusChange(context, "Product changed")
+                    notifyStatusChange("変更されました： $baseProduct")
                 }
 
                 override fun onComponentChange(
@@ -141,25 +151,19 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
                     oldComponent: BaseComponent?,
                     newComponent: BaseComponent?
                 ) {
-                    newComponent?.let {
-                        it.setComponentListener {
-                            Log.d(TAG, "onComponentChange: $it")
-                        }
-                    }
-                    notifyStatusChange(context, "onComponentChanged")
-                    Log.d(TAG, "onComponentChange: key:$componentKey, old:$oldComponent, new:$newComponent")
+                    activityCallback.setStatusMessage("コンポーネントが変更されました")
                 }
 
                 override fun onInitProcess(djisdkInitEvent: DJISDKInitEvent, totalProcess: Int) {
-                    Log.d(TAG, djisdkInitEvent.initializationState.toString())
+                    val message = djisdkInitEvent.initializationState.toString()
+                    activityCallback.setStatusMessage(message)
                 }
 
                 override fun onDatabaseDownloadProgress(current: Long, total: Long) {
                     val progress = (100 * current / total).toInt()
                     if (progress != lastProgress) {
                         lastProgress = progress
-                        val message = "Fly safe database download progress: $progress"
-                        Log.d(TAG, message)
+                        val message = "安全飛行データベースのダウンロード進捗: $progress"
                         activityCallback.setStatusMessage(message)
                     }
                 }
@@ -167,15 +171,13 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
 
             djiSdkManager = DJISDKManager.getInstance()
             djiSdkManager?.registerApp(context, callback) ?: run {
-                activityCallback.setStatusMessage("mDjiSdkManager is null!!")
+                activityCallback.setStatusMessage("DJISDKManagerがありません")
             }
         }
     }
 
-    private fun notifyStatusChange(context: Context, message: String) {
-        initFlightController()
+    private fun notifyStatusChange(message: String) {
         setProduct()
-        loginAccount(context)
         activityCallback.setStatusMessage(message)
         activityCallback.notifyStatusChange()
     }
@@ -185,36 +187,17 @@ class MainActivityPresenter(private val activityCallback: MainActivityCallback) 
             context,
             object : CompletionCallbackWith<UserAccountState?> {
                 override fun onSuccess(userAccountState: UserAccountState?) {
-                    Log.d(TAG, "Login Success")
-                    activityCallback.onLoginSuccess()
+                    activityCallback.onLoginSuccess("ログイン成功")
                 }
 
                 override fun onFailure(error: DJIError) {
-                    Log.e(TAG, "Login Error:" + error.description)
+                    activityCallback.onLoginFailure("ログイン失敗:" + error.description)
                 }
             }
         )
     }
 
     private fun setProduct() {
-        activityCallback.setProduct(djiSdkManager?.product?.model?.displayName ?: "(none)")
+        activityCallback.setProduct(djiSdkManager?.product?.model?.displayName ?: "---")
     }
-
-    //region function for flight controller
-    private fun initFlightController() {
-        val product: BaseProduct? = DJISDKManager.getInstance().product
-        if (product != null && product.isConnected) {
-            if (product is Aircraft) {
-                flightController = product.flightController
-            }
-        }
-        flightController?.let {
-            it.setStateCallback { djiFlightControllerCurrentState ->
-                val lat = djiFlightControllerCurrentState.aircraftLocation.latitude
-                val lng = djiFlightControllerCurrentState.aircraftLocation.longitude
-                activityCallback.updateDroneLocation(lat, lng)
-            }
-        }
-    }
-    //endregion
 }

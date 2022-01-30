@@ -2,7 +2,6 @@ package com.dji.djisdkdemo.activity
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.PersistableBundle
 import androidx.core.app.ActivityCompat
 import com.dji.djisdkdemo.R
 import com.dji.djisdkdemo.interfaces.MainActivityCallback
@@ -54,12 +53,12 @@ class MainActivity : AppCompatActivity() {
             uiController.notifyStatusChange()
         }
 
-        override fun updateDroneLocation(lat: Double, lng: Double) {
-            uiController.updateDroneLocation(lat, lng)
+        override fun onLoginSuccess(message: String) {
+            uiController.onLoginSuccess(message)
         }
 
-        override fun onLoginSuccess() {
-            uiController.onLoginSuccess()
+        override fun onLoginFailure(message: String) {
+            uiController.onLoginFailure(message)
         }
     }
 
@@ -78,16 +77,6 @@ class MainActivity : AppCompatActivity() {
 
         // Check Require Permissions
         presenter.checkAndRequestPermissions(baseContext)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
-        super.onSaveInstanceState(outState, outPersistentState)
-        uiController.onSaveInstanceState(outState)
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        uiController.onLowMemory()
     }
 
     override fun onDestroy() {
