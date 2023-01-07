@@ -11,6 +11,9 @@ DJIのMSDK及びUXSDKを組み込んだサンプルプログラム
 - feature/waypoint：ウェイポイントミッション
 - feature/status：機体ステータスの取得
 
+### Active Track
+https://user-images.githubusercontent.com/1113980/211143296-a944fdc6-f203-454e-9463-c294b01eeedd.mp4
+
 ### flyzone(GEOFence)
 <img src="https://user-images.githubusercontent.com/1113980/211143166-1302b2cd-224f-44e9-8a08-357ac4adc00f.jpg" width="600" />
 
